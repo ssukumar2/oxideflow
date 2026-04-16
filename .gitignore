@@ -1,0 +1,6 @@
+/target
+Cargo.lock
+Cargo.toml
+.vscode/
+.idea/
+*.swp
