@@ -1,0 +1,10 @@
+2026-04-16 10:00:00 INFO server starting on port 8080
+2026-04-16 10:00:01 INFO connected to database
+2026-04-16 10:00:05 WARN slow query took 1200ms
+2026-04-16 10:00:10 ERROR failed to authenticate user alice
+2026-04-16 10:00:12 INFO user bob logged in
+2026-04-16 10:00:15 DEBUG cache hit for key user:42
+2026-04-16 10:00:20 ERROR database connection lost
+2026-04-16 10:00:22 INFO retrying connection
+2026-04-16 10:00:25 INFO connection restored
+just some random line without a level
