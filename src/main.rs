@@ -7,7 +7,6 @@ use std::path::PathBuf;
 mod parser;
 mod filter;
 
-use parser::LogLine;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]
