@@ -58,10 +58,12 @@ pub struct LogStats {
     pub total_lines: usize,
     pub by_level: HashMap<String, usize>,
     pub lines_without_level: usize,
+    pub top_repeated: Vec<(String, usize)>,
 }
 
 pub fn summarize(lines: &[LogLine]) -> LogStats {
     let mut by_level: HashMap<String, usize> = HashMap::new();
+    let mut message_counts: HashMap<String, usize> = HashMap::new();
     let mut without = 0;
 
     for line in lines {
@@ -69,12 +71,23 @@ pub fn summarize(lines: &[LogLine]) -> LogStats {
             Some(lvl) => *by_level.entry(lvl.clone()).or_insert(0) += 1,
             None => without += 1,
         }
+        // Count repeated raw messages (useful for detecting log spam)
+        *message_counts.entry(line.raw.clone()).or_insert(0) += 1;
     }
+
+    // Top 5 most repeated messages
+    let mut sorted: Vec<(String, usize)> = message_counts
+        .into_iter()
+        .filter(|(_, count)| *count > 1)
+        .collect();
+    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.truncate(5);
 
     LogStats {
         total_lines: lines.len(),
         by_level,
         lines_without_level: without,
+        top_repeated: sorted,
     }
 }
 
@@ -118,6 +131,7 @@ mod tests {
         assert_eq!(s.by_level.get("INFO"), Some(&2));
         assert_eq!(s.by_level.get("ERROR"), Some(&1));
         assert_eq!(s.lines_without_level, 1);
+        assert!(s.top_repeated.len() <= 5);
     }
 
     #[test]
