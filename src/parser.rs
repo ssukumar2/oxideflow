@@ -4,6 +4,7 @@ use serde::Serialize;
 use std::fmt;
 use std::fs;
 use std::path::Path;
+use colored::Colorize;
 
 /// A single parsed log line.
 #[derive(Debug, Clone, Serialize)]
@@ -18,7 +19,19 @@ pub struct LogLine {
 
 impl fmt::Display for LogLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:>6}  {}", self.line_number, self.raw)
+         let level_str = match &self.level {
+            Some(lvl) => match lvl.as_str() {
+                "ERROR" => format!("{:>5}", lvl).red().bold().to_string(),
+                "WARN" | "WARNING" => format!("{:>5}", "WARN").yellow().bold().to_string(),
+                "INFO" => format!("{:>5}", lvl).green().to_string(),
+                "DEBUG" => format!("{:>5}", lvl).blue().to_string(),
+                "TRACE" => format!("{:>5}", lvl).dimmed().to_string(),
+                _ => format!("{:>5}", lvl),
+            },
+            None => format!("{:>5}", "---"),
+        };
+        write!(f, "{:>6}  {}  {}", self.line_number, level_str, self.raw)
+
     }
 }
 
