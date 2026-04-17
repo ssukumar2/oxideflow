@@ -33,6 +33,11 @@ enum Commands {
         #[arg(short, long)]
         pattern: Option<String>,
 
+         /// Filter lines containing this time prefix (e.g. "2026-04-16 10:00")
+        #[arg(short = 't', long)]
+        since: Option<String>,
+
+
         /// Output as JSON instead of plain text
         #[arg(short, long)]
         json: bool,
@@ -50,12 +55,16 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Filter { file, level, pattern, json } => {
+        Commands::Filter { file, level, pattern, since, json } => {
             let lines = parser::read_file(&file)
                 .with_context(|| format!("failed to read {}", file.display()))?;
 
-            let filtered = filter::apply(&lines, level.as_deref(), pattern.as_deref())
+            let mut filtered = filter::apply(&lines, level.as_deref(), pattern.as_deref())
                 .context("filter failed")?;
+            
+            if let Some(ref prefix) = since {
+                filtered = filter::filter_by_time_prefix(&filtered, prefix);
+            }
 
             if json {
                 let as_json = serde_json::to_string_pretty(&filtered)

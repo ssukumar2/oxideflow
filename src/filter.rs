@@ -43,6 +43,16 @@ pub fn apply<'a>(
     Ok(out)
 }
 
+/// Filter lines that contain a timestamp matching a simple prefix.
+/// For example, prefix "2026-04-16 10:00:1" matches lines from 10:00:10 to 10:00:19.
+pub fn filter_by_time_prefix(lines: &[LogLine], prefix: &str) -> Vec<LogLine> {
+    lines
+        .iter()
+        .filter(|line| line.raw.contains(prefix))
+        .cloned()
+        .collect()
+}
+
 #[derive(Debug, Serialize)]
 pub struct LogStats {
     pub total_lines: usize,
@@ -67,6 +77,7 @@ pub fn summarize(lines: &[LogLine]) -> LogStats {
         lines_without_level: without,
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -113,5 +124,17 @@ mod tests {
     fn invalid_regex_errors() {
         let r = apply(&sample_lines(), None, Some("[invalid"));
         assert!(r.is_err());
+    }
+
+    #[test]
+    fn filters_by_time_prefix() {
+        let lines = vec![
+            LogLine { line_number: 1, level: Some("INFO".into()), raw: "2026-04-16 10:00:01 INFO start".into() },
+            LogLine { line_number: 2, level: Some("ERROR".into()), raw: "2026-04-16 10:00:10 ERROR fail".into() },
+            LogLine { line_number: 3, level: Some("INFO".into()), raw: "2026-04-16 10:00:15 INFO ok".into() },
+        ];
+
+        let out = super::filter_by_time_prefix(&lines, "2026-04-16 10:00:1");
+        assert_eq!(out.len(), 2);
     }
 }
