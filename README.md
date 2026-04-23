@@ -1,3 +1,5 @@
+![Rust CI](https://github.com/ssukumar2/oxideflow/actions/workflows/rust.yml/badge.svg)
+
 # oxideflow
 
 A log file analyzer CLI written in Rust. Filters log lines by level and regex, and produces summary statistics. Designed as a foundation for larger log processing tools.
