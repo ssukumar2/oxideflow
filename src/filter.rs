@@ -5,6 +5,7 @@ use regex::Regex;
 use serde::Serialize;
 use std::collections::HashMap;
 use thiserror::Error;
+use std::cmp::Reverse;
 
 #[derive(Debug, Error)]
 pub enum FilterError {
@@ -14,8 +15,8 @@ pub enum FilterError {
 
 /// Apply level and pattern filters. Both are optional.
 /// If a filter is None, that criterion is not applied.
-pub fn apply<'a>(
-    lines: &'a [LogLine],
+pub fn apply(
+    lines: &[LogLine],
     level: Option<&str>,
     pattern: Option<&str>,
 ) -> Result<Vec<LogLine>, FilterError> {
@@ -80,7 +81,7 @@ pub fn summarize(lines: &[LogLine]) -> LogStats {
         .into_iter()
         .filter(|(_, count)| *count > 1)
         .collect();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.sort_by_key(|b| std::cmp::Reverse(b.1));
     sorted.truncate(5);
 
     LogStats {
