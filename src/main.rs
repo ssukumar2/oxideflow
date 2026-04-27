@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 mod parser;
 mod filter;
-
+pub mod stats;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]
