@@ -1,4 +1,4 @@
-use crate::parser::LogEntry;
+use crate::parser::LogLine;
 use std::collections::HashMap;
 use std::cmp::Reverse;
 
@@ -8,14 +8,15 @@ pub struct Stats {
     pub top_messages: Vec<(String, usize)>,
 }
 
-pub fn compute(entries: &[LogEntry]) -> Stats {
+pub fn compute(entries: &[LogLine]) -> Stats {
     let total = entries.len();
     let mut by_level: HashMap<String, usize> = HashMap::new();
     let mut msg_counts: HashMap<String, usize> = HashMap::new();
 
     for entry in entries {
-        *by_level.entry(entry.level.clone()).or_insert(0) += 1;
-        *msg_counts.entry(entry.message.clone()).or_insert(0) += 1;
+        let level = entry.level.clone().unwrap_or_else(|| "UNKNOWN".to_string());
+        *by_level.entry(level).or_insert(0) += 1;
+        *msg_counts.entry(entry.raw.clone()).or_insert(0) += 1;
     }
 
     let mut top: Vec<(String, usize)> = msg_counts.into_iter().collect();
