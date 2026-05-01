@@ -93,3 +93,13 @@ mod tests {
         assert_eq!(lines[1].level, Some("ERROR".into()));
     }
 }
+pub fn parse_line(raw: &str, line_number: usize) -> LogLine {
+    let level = if raw.contains("ERROR") { Some("ERROR".to_string()) }
+        else if raw.contains("WARN") { Some("WARN".to_string()) }
+        else if raw.contains("INFO") { Some("INFO".to_string()) }
+        else if raw.contains("DEBUG") { Some("DEBUG".to_string()) }
+        else if raw.contains("TRACE") { Some("TRACE".to_string()) }
+        else { None };
+
+    LogLine { line_number, level, raw: raw.to_string() }
+}
