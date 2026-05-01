@@ -10,6 +10,7 @@ pub mod stats;
 pub mod timefilter;
 pub mod follow;
 pub mod dedup;
+pub mod config;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]
