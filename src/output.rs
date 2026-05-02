@@ -26,7 +26,3 @@ pub fn print_json(entry: &LogLine) {
 pub fn print_plain(entry: &LogLine) {
     println!("{}", entry.raw);
 }
-
-pub fn print_plain(entry: &LogLine) {
-    println!("{}", entry.raw);
-}
