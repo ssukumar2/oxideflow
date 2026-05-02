@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 mod parser;
 mod filter;
+pub mod output;
 pub mod stats;
 pub mod timefilter;
 pub mod follow;
