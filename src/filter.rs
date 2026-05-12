@@ -92,6 +92,20 @@ pub fn summarize(lines: &[LogLine]) -> LogStats {
     }
 }
 
+#[allow(dead_code)]
+pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine> {
+    let target = level.to_uppercase();
+    lines
+        .iter()
+        .filter(|l| l.level.as_ref().map(|x| x.to_uppercase()) == Some(target.clone()))
+        .collect()
+}
+
+#[allow(dead_code)]
+pub fn errors_only(lines: &[LogLine]) -> Vec<&LogLine> {
+    filter_by_level(lines, "ERROR")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,18 +193,4 @@ mod tests {
         let out = super::filter_by_time_prefix(&lines, "2026-04-16 10:00:1");
         assert_eq!(out.len(), 2);
     }
-}
-
-#[allow(dead_code)]
-pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine> {
-    let target = level.to_uppercase();
-    lines
-        .iter()
-        .filter(|l| l.level.as_ref().map(|x| x.to_uppercase()) == Some(target.clone()))
-        .collect()
-}
-
-#[allow(dead_code)]
-pub fn errors_only(lines: &[LogLine]) -> Vec<&LogLine> {
-    filter_by_level(lines, "ERROR")
 }

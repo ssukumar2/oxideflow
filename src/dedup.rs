@@ -47,6 +47,25 @@ impl Deduplicator {
     }
 }
 
+pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, usize)> {
+    use std::collections::HashMap;
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for line in lines {
+        if line
+            .level
+            .as_deref()
+            .map(|s| s.eq_ignore_ascii_case("ERROR"))
+            .unwrap_or(false)
+        {
+            *counts.entry(line.raw.clone()).or_insert(0) += 1;
+        }
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by_key(|b| std::cmp::Reverse(b.1));
+    v.truncate(n);
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,23 +102,4 @@ mod tests {
         assert_eq!(result.len(), 3);
         assert_eq!(dedup.total_suppressed(), 0);
     }
-}
-
-pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, usize)> {
-    use std::collections::HashMap;
-    let mut counts: HashMap<String, usize> = HashMap::new();
-    for line in lines {
-        if line
-            .level
-            .as_deref()
-            .map(|s| s.eq_ignore_ascii_case("ERROR"))
-            .unwrap_or(false)
-        {
-            *counts.entry(line.raw.clone()).or_insert(0) += 1;
-        }
-    }
-    let mut v: Vec<_> = counts.into_iter().collect();
-    v.sort_by_key(|b| std::cmp::Reverse(b.1));
-    v.truncate(n);
-    v
 }
