@@ -154,6 +154,7 @@ mod tests {
     }
 }
 
+#[allow(dead_code)]
 pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine> {
     let target = level.to_uppercase();
     lines
@@ -162,6 +163,7 @@ pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine
         .collect()
 }
 
-pub fn errors_only<'a>(lines: &'a [LogLine]) -> Vec<&'a LogLine> {
+#[allow(dead_code)]
+pub fn errors_only(lines: &[LogLine]) -> Vec<&LogLine> {
     filter_by_level(lines, "ERROR")
 }
