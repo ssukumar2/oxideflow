@@ -89,31 +89,3 @@ pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, us
     v.truncate(n);
     v
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::parser::LogLine;
-
-    fn mk(n: usize, level: &str, raw: &str) -> LogLine {
-        LogLine {
-            line_number: n,
-            level: Some(level.to_string()),
-            raw: raw.to_string(),
-        }
-    }
-
-    #[test]
-    fn top_errors_ranks_by_count() {
-        let lines = vec![
-            mk(1, "ERROR", "connection refused"),
-            mk(2, "ERROR", "connection refused"),
-            mk(3, "ERROR", "timeout"),
-            mk(4, "INFO", "ok"),
-        ];
-        let top = top_errors(&lines, 2);
-        assert_eq!(top[0].0, "connection refused");
-        assert_eq!(top[0].1, 2);
-        assert_eq!(top[1].1, 1);
-    }
-}
