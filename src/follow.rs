@@ -1,9 +1,9 @@
+use crate::output;
+use crate::parser;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::thread;
 use std::time::Duration;
-use crate::parser;
-use crate::output;
 
 pub fn tail_file(path: &str, colored: bool) -> Result<(), Box<dyn std::error::Error>> {
     let file = File::open(path)?;

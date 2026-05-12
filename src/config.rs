@@ -1,6 +1,6 @@
+use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
-use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -18,9 +18,15 @@ pub struct Config {
     pub time_format: Option<String>,
 }
 
-fn default_colored() -> bool { true }
-fn default_json() -> bool { false }
-fn default_dedup() -> usize { 0 }
+fn default_colored() -> bool {
+    true
+}
+fn default_json() -> bool {
+    false
+}
+fn default_dedup() -> usize {
+    0
+}
 
 impl Default for Config {
     fn default() -> Self {

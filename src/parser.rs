@@ -1,10 +1,10 @@
 //! Log file parsing. Tries to recognize common log formats.
 
+use colored::Colorize;
 use serde::Serialize;
 use std::fmt;
 use std::fs;
 use std::path::Path;
-use colored::Colorize;
 
 /// A single parsed log line.
 #[derive(Debug, Clone, Serialize)]
@@ -19,7 +19,7 @@ pub struct LogLine {
 
 impl fmt::Display for LogLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-         let level_str = match &self.level {
+        let level_str = match &self.level {
             Some(lvl) => match lvl.as_str() {
                 "ERROR" => format!("{:>5}", lvl).red().bold().to_string(),
                 "WARN" | "WARNING" => format!("{:>5}", "WARN").yellow().bold().to_string(),
@@ -31,7 +31,6 @@ impl fmt::Display for LogLine {
             None => format!("{:>5}", "---"),
         };
         write!(f, "{:>6}  {}  {}", self.line_number, level_str, self.raw)
-
     }
 }
 
@@ -71,12 +70,18 @@ mod tests {
 
     #[test]
     fn detects_error_level() {
-        assert_eq!(detect_level("2026-04-16 ERROR something broke"), Some("ERROR".into()));
+        assert_eq!(
+            detect_level("2026-04-16 ERROR something broke"),
+            Some("ERROR".into())
+        );
     }
 
     #[test]
     fn detects_info_level() {
-        assert_eq!(detect_level("2026-04-16 INFO server started"), Some("INFO".into()));
+        assert_eq!(
+            detect_level("2026-04-16 INFO server started"),
+            Some("INFO".into())
+        );
     }
 
     #[test]
@@ -94,12 +99,23 @@ mod tests {
     }
 }
 pub fn parse_line(raw: &str, line_number: usize) -> LogLine {
-    let level = if raw.contains("ERROR") { Some("ERROR".to_string()) }
-        else if raw.contains("WARN") { Some("WARN".to_string()) }
-        else if raw.contains("INFO") { Some("INFO".to_string()) }
-        else if raw.contains("DEBUG") { Some("DEBUG".to_string()) }
-        else if raw.contains("TRACE") { Some("TRACE".to_string()) }
-        else { None };
+    let level = if raw.contains("ERROR") {
+        Some("ERROR".to_string())
+    } else if raw.contains("WARN") {
+        Some("WARN".to_string())
+    } else if raw.contains("INFO") {
+        Some("INFO".to_string())
+    } else if raw.contains("DEBUG") {
+        Some("DEBUG".to_string())
+    } else if raw.contains("TRACE") {
+        Some("TRACE".to_string())
+    } else {
+        None
+    };
 
-    LogLine { line_number, level, raw: raw.to_string() }
+    LogLine {
+        line_number,
+        level,
+        raw: raw.to_string(),
+    }
 }

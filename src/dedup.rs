@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::parser::LogLine;
+use std::collections::HashMap;
 
 pub struct Deduplicator {
     window: usize,
@@ -8,7 +8,10 @@ pub struct Deduplicator {
 
 impl Deduplicator {
     pub fn new(window: usize) -> Self {
-        Self { window, seen: HashMap::new() }
+        Self {
+            window,
+            seen: HashMap::new(),
+        }
     }
 
     pub fn process<'a>(&mut self, entries: &'a [LogLine]) -> Vec<&'a LogLine> {
@@ -28,14 +31,16 @@ impl Deduplicator {
     }
 
     pub fn duplicates_found(&self) -> Vec<(String, usize)> {
-        self.seen.iter()
+        self.seen
+            .iter()
             .filter(|(_, &count)| count > 1)
             .map(|(msg, &count)| (msg.clone(), count))
             .collect()
     }
 
     pub fn total_suppressed(&self) -> usize {
-        self.seen.values()
+        self.seen
+            .values()
             .filter(|&&count| count > self.window)
             .map(|&count| count - self.window)
             .sum()
@@ -49,11 +54,13 @@ mod tests {
 
     #[test]
     fn test_dedup_suppresses_repeats() {
-        let lines: Vec<LogLine> = (0..5).map(|i| LogLine {
-            line_number: i + 1,
-            level: Some("INFO".to_string()),
-            raw: "same message".to_string(),
-        }).collect();
+        let lines: Vec<LogLine> = (0..5)
+            .map(|i| LogLine {
+                line_number: i + 1,
+                level: Some("INFO".to_string()),
+                raw: "same message".to_string(),
+            })
+            .collect();
 
         let mut dedup = Deduplicator::new(1);
         let result = dedup.process(&lines);
@@ -63,11 +70,13 @@ mod tests {
 
     #[test]
     fn test_dedup_keeps_unique() {
-        let lines: Vec<LogLine> = (0..3).map(|i| LogLine {
-            line_number: i + 1,
-            level: Some("INFO".to_string()),
-            raw: format!("message {}", i),
-        }).collect();
+        let lines: Vec<LogLine> = (0..3)
+            .map(|i| LogLine {
+                line_number: i + 1,
+                level: Some("INFO".to_string()),
+                raw: format!("message {}", i),
+            })
+            .collect();
 
         let mut dedup = Deduplicator::new(1);
         let result = dedup.process(&lines);
@@ -80,7 +89,12 @@ pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, us
     use std::collections::HashMap;
     let mut counts: HashMap<String, usize> = HashMap::new();
     for line in lines {
-        if line.level.as_deref().map(|s| s.eq_ignore_ascii_case("ERROR")).unwrap_or(false) {
+        if line
+            .level
+            .as_deref()
+            .map(|s| s.eq_ignore_ascii_case("ERROR"))
+            .unwrap_or(false)
+        {
             *counts.entry(line.raw.clone()).or_insert(0) += 1;
         }
     }

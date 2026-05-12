@@ -14,20 +14,27 @@ impl TimeFilter {
     pub fn apply<'a>(&self, entries: &'a [LogLine]) -> Vec<&'a LogLine> {
         let ts_re = Regex::new(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}").unwrap();
 
-        entries.iter().filter(|entry| {
-            if let Some(caps) = ts_re.find(&entry.raw) {
-                let ts = caps.as_str();
-                if let Some(ref since) = self.since {
-                    if ts < since.as_str() { return false; }
+        entries
+            .iter()
+            .filter(|entry| {
+                if let Some(caps) = ts_re.find(&entry.raw) {
+                    let ts = caps.as_str();
+                    if let Some(ref since) = self.since {
+                        if ts < since.as_str() {
+                            return false;
+                        }
+                    }
+                    if let Some(ref until) = self.until {
+                        if ts > until.as_str() {
+                            return false;
+                        }
+                    }
+                    true
+                } else {
+                    true // keep lines without timestamps
                 }
-                if let Some(ref until) = self.until {
-                    if ts > until.as_str() { return false; }
-                }
-                true
-            } else {
-                true // keep lines without timestamps
-            }
-        }).collect()
+            })
+            .collect()
     }
 }
 
