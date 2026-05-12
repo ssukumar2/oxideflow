@@ -165,3 +165,30 @@ pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine
 pub fn errors_only<'a>(lines: &'a [LogLine]) -> Vec<&'a LogLine> {
     filter_by_level(lines, "ERROR")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::LogLine;
+
+    fn mk(n: usize, level: Option<&str>) -> LogLine {
+        LogLine {
+            line_number: n,
+            level: level.map(|s| s.to_string()),
+            raw: format!("line {}", n),
+        }
+    }
+
+    #[test]
+    fn filter_errors_case_insensitive() {
+        let lines = vec![mk(1, Some("error")), mk(2, Some("INFO")), mk(3, Some("ERROR"))];
+        let got = errors_only(&lines);
+        assert_eq!(got.len(), 2);
+    }
+
+    #[test]
+    fn filter_by_level_basic() {
+        let lines = vec![mk(1, Some("INFO")), mk(2, Some("WARN"))];
+        assert_eq!(filter_by_level(&lines, "warn").len(), 1);
+    }
+}
