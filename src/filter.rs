@@ -153,3 +153,15 @@ mod tests {
         assert_eq!(out.len(), 2);
     }
 }
+
+pub fn filter_by_level<'a>(lines: &'a [LogLine], level: &str) -> Vec<&'a LogLine> {
+    let target = level.to_uppercase();
+    lines
+        .iter()
+        .filter(|l| l.level.as_ref().map(|x| x.to_uppercase()) == Some(target.clone()))
+        .collect()
+}
+
+pub fn errors_only<'a>(lines: &'a [LogLine]) -> Vec<&'a LogLine> {
+    filter_by_level(lines, "ERROR")
+}
