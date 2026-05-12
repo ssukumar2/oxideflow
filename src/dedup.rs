@@ -75,3 +75,17 @@ mod tests {
         assert_eq!(dedup.total_suppressed(), 0);
     }
 }
+
+pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, usize)> {
+    use std::collections::HashMap;
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for line in lines {
+        if line.level.as_deref().map(|s| s.eq_ignore_ascii_case("ERROR")).unwrap_or(false) {
+            *counts.entry(line.raw.clone()).or_insert(0) += 1;
+        }
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by(|a, b| b.1.cmp(&a.1));
+    v.truncate(n);
+    v
+}
