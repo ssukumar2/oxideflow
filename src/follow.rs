@@ -11,7 +11,8 @@ pub fn tail_file(path: &str, colored: bool) -> Result<(), Box<dyn std::error::Er
 
     // Seek to end
     reader.seek(SeekFrom::End(0))?;
-    let mut line_number = 0usize;
+    let mut line_number: usize = 0;
+    let _ = line_number;
 
     // Count existing lines for line_number offset
     {
