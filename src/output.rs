@@ -40,3 +40,19 @@ pub fn to_json(lines: &[crate::parser::LogLine]) -> String {
         .collect();
     serde_json::to_string_pretty(&arr).unwrap_or_else(|_| "[]".to_string())
 }
+
+pub fn print_colored_all(lines: &[crate::parser::LogLine]) {
+    use colored::Colorize;
+    for line in lines {
+        let level_str = line.level.as_deref().unwrap_or("UNKNOWN").to_uppercase();
+        let colored = match level_str.as_str() {
+            "ERROR" => level_str.red().bold(),
+            "WARN" | "WARNING" => level_str.yellow().bold(),
+            "INFO" => level_str.green(),
+            "DEBUG" => level_str.blue(),
+            "TRACE" => level_str.magenta(),
+            _ => level_str.normal(),
+        };
+        println!("{:>6} [{}] {}", line.line_number, colored, line.raw);
+    }
+}
