@@ -26,3 +26,17 @@ pub fn print_json(entry: &LogLine) {
 pub fn print_plain(entry: &LogLine) {
     println!("{}", entry.raw);
 }
+
+pub fn to_json(lines: &[crate::parser::LogLine]) -> String {
+    let arr: Vec<_> = lines
+        .iter()
+        .map(|l| {
+            serde_json::json!({
+                "line_number": l.line_number,
+                "level": l.level,
+                "raw": l.raw,
+            })
+        })
+        .collect();
+    serde_json::to_string_pretty(&arr).unwrap_or_else(|_| "[]".to_string())
+}
