@@ -60,3 +60,20 @@ fn dirs_home() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("."))
 }
+
+pub fn default_levels() -> Vec<String> {
+    vec![
+        "ERROR".to_string(),
+        "WARN".to_string(),
+        "INFO".to_string(),
+        "DEBUG".to_string(),
+        "TRACE".to_string(),
+    ]
+}
+
+pub fn is_known_level(level: &str) -> bool {
+    matches!(
+        level.to_uppercase().as_str(),
+        "ERROR" | "WARN" | "WARNING" | "INFO" | "DEBUG" | "TRACE"
+    )
+}
