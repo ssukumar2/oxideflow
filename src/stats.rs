@@ -35,6 +35,22 @@ pub fn error_rate(lines: &[crate::parser::LogLine]) -> f64 {
     (errors as f64 / lines.len() as f64) * 100.0
 }
 
+/// Count lines per hour bucket based on YYYY-MM-DD HH timestamp prefix.
+/// Returns sorted (hour_prefix, count) pairs.
+#[allow(dead_code)]
+pub fn lines_per_hour(lines: &[crate::parser::LogLine]) -> Vec<(String, usize)> {
+    let re = regex::Regex::new(r"(\d{4}-\d{2}-\d{2}[T ]\d{2})").unwrap();
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for line in lines {
+        if let Some(m) = re.find(&line.raw) {
+            *counts.entry(m.as_str().to_string()).or_insert(0) += 1;
+        }
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by(|a, b| a.0.cmp(&b.0));
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
