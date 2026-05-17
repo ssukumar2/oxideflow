@@ -106,6 +106,15 @@ pub fn errors_only(lines: &[LogLine]) -> Vec<&LogLine> {
     filter_by_level(lines, "ERROR")
 }
 
+/// Keep only lines whose line_number is within [start, end] inclusive.
+#[allow(dead_code)]
+pub fn line_range(lines: &[LogLine], start: usize, end: usize) -> Vec<&LogLine> {
+    lines
+        .iter()
+        .filter(|l| l.line_number >= start && l.line_number <= end)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
