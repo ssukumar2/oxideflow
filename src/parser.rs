@@ -127,6 +127,21 @@ pub fn is_blank(line: &LogLine) -> bool {
     line.raw.trim().is_empty()
 }
 
+/// Total bytes of raw content across all lines.
+#[allow(dead_code)]
+pub fn total_bytes(lines: &[LogLine]) -> usize {
+    lines.iter().map(|l| l.raw.len()).sum()
+}
+
+/// Average line length in bytes (returns 0 for empty input).
+#[allow(dead_code)]
+pub fn average_line_length(lines: &[LogLine]) -> usize {
+    if lines.is_empty() {
+        return 0;
+    }
+    total_bytes(lines) / lines.len()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
