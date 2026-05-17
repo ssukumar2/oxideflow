@@ -115,6 +115,21 @@ pub fn line_range(lines: &[LogLine], start: usize, end: usize) -> Vec<&LogLine> 
         .collect()
 }
 
+/// Keep only lines whose severity is at or above the given threshold.
+#[allow(dead_code)]
+pub fn at_least_severity(lines: &[LogLine], min: crate::parser::Severity) -> Vec<&LogLine> {
+    lines
+        .iter()
+        .filter(|l| {
+            l.level
+                .as_deref()
+                .and_then(crate::parser::Severity::from_str)
+                .map(|s| s >= min)
+                .unwrap_or(false)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,5 +216,21 @@ mod tests {
 
         let out = super::filter_by_time_prefix(&lines, "2026-04-16 10:00:1");
         assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn at_least_severity_filters_below_threshold() {
+        let lines = sample_lines();
+        let got = super::at_least_severity(&lines, crate::parser::Severity::Error);
+        assert_eq!(got.len(), 1);
+    }
+
+    #[test]
+    fn line_range_inclusive() {
+        let lines = sample_lines();
+        let got = super::line_range(&lines, 2, 3);
+        assert_eq!(got.len(), 2);
+        assert_eq!(got[0].line_number, 2);
+        assert_eq!(got[1].line_number, 3);
     }
 }
