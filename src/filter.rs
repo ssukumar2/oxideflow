@@ -169,6 +169,22 @@ pub fn http_status_counts(lines: &[LogLine]) -> std::collections::HashMap<u16, u
     counts
 }
 
+/// Extract UUID-like session/correlation IDs and count their occurrences.
+#[allow(dead_code)]
+pub fn session_id_counts(lines: &[LogLine]) -> std::collections::HashMap<String, usize> {
+    let re = regex::Regex::new(
+        r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
+    )
+    .unwrap();
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            *counts.entry(m.as_str().to_string()).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
