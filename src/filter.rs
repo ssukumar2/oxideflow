@@ -130,6 +130,23 @@ pub fn at_least_severity(lines: &[LogLine], min: crate::parser::Severity) -> Vec
         .collect()
 }
 
+/// Extract all unique substrings from `raw` that match the given regex pattern.
+#[allow(dead_code)]
+pub fn extract_matches(lines: &[LogLine], pattern: &str) -> Result<Vec<String>, regex::Error> {
+    let re = regex::Regex::new(pattern)?;
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            let s = m.as_str().to_string();
+            if seen.insert(s.clone()) {
+                out.push(s);
+            }
+        }
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
