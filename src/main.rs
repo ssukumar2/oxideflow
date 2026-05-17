@@ -12,6 +12,7 @@ pub mod histogram;
 pub mod merge;
 pub mod output;
 mod parser;
+pub mod search;
 pub mod stats;
 pub mod timefilter;
 
