@@ -2,6 +2,9 @@
 name = "oxideflow"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/ssukumar2/oxideflow"
+keywords = ["log", "cli", "analyzer", "parser"]
+categories = ["command-line-utilities"]
 authors = ["Sairam Sukumar"]
 description = "A log file analyzer CLI with filtering and structured output"
 license = "MIT"

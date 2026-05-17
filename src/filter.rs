@@ -106,6 +106,85 @@ pub fn errors_only(lines: &[LogLine]) -> Vec<&LogLine> {
     filter_by_level(lines, "ERROR")
 }
 
+/// Keep only lines whose line_number is within [start, end] inclusive.
+#[allow(dead_code)]
+pub fn line_range(lines: &[LogLine], start: usize, end: usize) -> Vec<&LogLine> {
+    lines
+        .iter()
+        .filter(|l| l.line_number >= start && l.line_number <= end)
+        .collect()
+}
+
+/// Keep only lines whose severity is at or above the given threshold.
+#[allow(dead_code)]
+pub fn at_least_severity(lines: &[LogLine], min: crate::parser::Severity) -> Vec<&LogLine> {
+    lines
+        .iter()
+        .filter(|l| {
+            l.level
+                .as_deref()
+                .and_then(crate::parser::Severity::from_str)
+                .map(|s| s >= min)
+                .unwrap_or(false)
+        })
+        .collect()
+}
+
+/// Extract all unique substrings from `raw` that match the given regex pattern.
+#[allow(dead_code)]
+pub fn extract_matches(lines: &[LogLine], pattern: &str) -> Result<Vec<String>, regex::Error> {
+    let re = regex::Regex::new(pattern)?;
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            let s = m.as_str().to_string();
+            if seen.insert(s.clone()) {
+                out.push(s);
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Extract all unique IPv4 addresses found in log content.
+#[allow(dead_code)]
+pub fn extract_ipv4(lines: &[LogLine]) -> Vec<String> {
+    let pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b";
+    extract_matches(lines, pattern).unwrap_or_default()
+}
+
+/// Extract HTTP status codes (3-digit numbers in 1xx-5xx range) with their occurrence counts.
+#[allow(dead_code)]
+pub fn http_status_counts(lines: &[LogLine]) -> std::collections::HashMap<u16, usize> {
+    let re = regex::Regex::new(r"\b([1-5]\d{2})\b").unwrap();
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Ok(code) = cap[1].parse::<u16>() {
+                *counts.entry(code).or_insert(0) += 1;
+            }
+        }
+    }
+    counts
+}
+
+/// Extract UUID-like session/correlation IDs and count their occurrences.
+#[allow(dead_code)]
+pub fn session_id_counts(lines: &[LogLine]) -> std::collections::HashMap<String, usize> {
+    let re = regex::Regex::new(
+        r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
+    )
+    .unwrap();
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            *counts.entry(m.as_str().to_string()).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,5 +271,21 @@ mod tests {
 
         let out = super::filter_by_time_prefix(&lines, "2026-04-16 10:00:1");
         assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn at_least_severity_filters_below_threshold() {
+        let lines = sample_lines();
+        let got = super::at_least_severity(&lines, crate::parser::Severity::Error);
+        assert_eq!(got.len(), 1);
+    }
+
+    #[test]
+    fn line_range_inclusive() {
+        let lines = sample_lines();
+        let got = super::line_range(&lines, 2, 3);
+        assert_eq!(got.len(), 2);
+        assert_eq!(got[0].line_number, 2);
+        assert_eq!(got[1].line_number, 3);
     }
 }

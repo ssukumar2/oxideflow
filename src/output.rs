@@ -56,3 +56,24 @@ pub fn print_colored_all(lines: &[crate::parser::LogLine]) {
         println!("{:>6} [{}] {}", line.line_number, colored, line.raw);
     }
 }
+
+/// Format a brief one-line summary string for the given counts.
+#[allow(dead_code)]
+pub fn summary_line(total: usize, errors: usize, warns: usize) -> String {
+    format!("total={} errors={} warns={}", total, errors, warns)
+}
+
+/// Serialize lines as CSV: line_number,level,raw (raw is double-quote escaped).
+#[allow(dead_code)]
+pub fn to_csv(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from("line_number,level,raw\n");
+    for line in lines {
+        let level = line.level.as_deref().unwrap_or("");
+        let escaped_raw = line.raw.replace('"', "\"\"");
+        out.push_str(&format!(
+            "{},{},\"{}\"\n",
+            line.line_number, level, escaped_raw
+        ));
+    }
+    out
+}

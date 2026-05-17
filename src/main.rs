@@ -4,12 +4,17 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+pub mod anomaly;
 pub mod config;
 pub mod dedup;
 mod filter;
 pub mod follow;
+pub mod histogram;
+pub mod merge;
 pub mod output;
 mod parser;
+pub mod redact;
+pub mod search;
 pub mod stats;
 pub mod timefilter;
 

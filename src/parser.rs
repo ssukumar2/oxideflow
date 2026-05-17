@@ -86,6 +86,62 @@ pub fn parse_line(raw: &str, line_number: usize) -> LogLine {
     }
 }
 
+/// Log severity ordered from least to most severe.
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Severity {
+    Trace,
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+#[allow(dead_code)]
+impl Severity {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_uppercase().as_str() {
+            "TRACE" => Some(Self::Trace),
+            "DEBUG" => Some(Self::Debug),
+            "INFO" => Some(Self::Info),
+            "WARN" | "WARNING" => Some(Self::Warn),
+            "ERROR" => Some(Self::Error),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Trace => "TRACE",
+            Self::Debug => "DEBUG",
+            Self::Info => "INFO",
+            Self::Warn => "WARN",
+            Self::Error => "ERROR",
+        }
+    }
+}
+
+/// Returns true if the line's raw content is empty or whitespace-only.
+#[allow(dead_code)]
+pub fn is_blank(line: &LogLine) -> bool {
+    line.raw.trim().is_empty()
+}
+
+/// Total bytes of raw content across all lines.
+#[allow(dead_code)]
+pub fn total_bytes(lines: &[LogLine]) -> usize {
+    lines.iter().map(|l| l.raw.len()).sum()
+}
+
+/// Average line length in bytes (returns 0 for empty input).
+#[allow(dead_code)]
+pub fn average_line_length(lines: &[LogLine]) -> usize {
+    if lines.is_empty() {
+        return 0;
+    }
+    total_bytes(lines) / lines.len()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -118,5 +174,30 @@ mod tests {
         assert_eq!(lines.len(), 3);
         assert_eq!(lines[0].line_number, 1);
         assert_eq!(lines[1].level, Some("ERROR".into()));
+    }
+
+    #[test]
+    fn severity_parses_case_insensitive() {
+        assert_eq!(
+            super::Severity::from_str("error"),
+            Some(super::Severity::Error)
+        );
+        assert_eq!(
+            super::Severity::from_str("WARNING"),
+            Some(super::Severity::Warn)
+        );
+        assert_eq!(super::Severity::from_str("bogus"), None);
+    }
+
+    #[test]
+    fn severity_ordering() {
+        assert!(super::Severity::Error > super::Severity::Warn);
+        assert!(super::Severity::Trace < super::Severity::Info);
+    }
+
+    #[test]
+    fn severity_as_str_roundtrip() {
+        let s = super::Severity::Info;
+        assert_eq!(s.as_str(), "INFO");
     }
 }
