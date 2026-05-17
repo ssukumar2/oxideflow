@@ -17,6 +17,24 @@ pub fn total_lines(lines: &[LogLine]) -> usize {
     lines.len()
 }
 
+/// Percentage of lines that are at ERROR level (0.0 to 100.0).
+#[allow(dead_code)]
+pub fn error_rate(lines: &[crate::parser::LogLine]) -> f64 {
+    if lines.is_empty() {
+        return 0.0;
+    }
+    let errors = lines
+        .iter()
+        .filter(|l| {
+            l.level
+                .as_deref()
+                .map(|s| s.eq_ignore_ascii_case("ERROR"))
+                .unwrap_or(false)
+        })
+        .count();
+    (errors as f64 / lines.len() as f64) * 100.0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
