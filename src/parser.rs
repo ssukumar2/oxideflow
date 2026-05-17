@@ -121,6 +121,12 @@ impl Severity {
     }
 }
 
+/// Returns true if the line's raw content is empty or whitespace-only.
+#[allow(dead_code)]
+pub fn is_blank(line: &LogLine) -> bool {
+    line.raw.trim().is_empty()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
