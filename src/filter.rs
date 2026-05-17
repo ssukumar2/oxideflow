@@ -147,6 +147,13 @@ pub fn extract_matches(lines: &[LogLine], pattern: &str) -> Result<Vec<String>, 
     Ok(out)
 }
 
+/// Extract all unique IPv4 addresses found in log content.
+#[allow(dead_code)]
+pub fn extract_ipv4(lines: &[LogLine]) -> Vec<String> {
+    let pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b";
+    extract_matches(lines, pattern).unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
