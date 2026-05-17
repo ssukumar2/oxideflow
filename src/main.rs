@@ -8,6 +8,7 @@ pub mod config;
 pub mod dedup;
 mod filter;
 pub mod follow;
+pub mod histogram;
 pub mod output;
 mod parser;
 pub mod stats;
