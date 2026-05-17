@@ -51,6 +51,21 @@ pub fn lines_per_hour(lines: &[crate::parser::LogLine]) -> Vec<(String, usize)> 
     v
 }
 
+/// Return the longest log line by raw byte length, or None if empty.
+#[allow(dead_code)]
+pub fn longest_line(lines: &[crate::parser::LogLine]) -> Option<&crate::parser::LogLine> {
+    lines.iter().max_by_key(|l| l.raw.len())
+}
+
+/// Return the shortest non-blank log line, or None.
+#[allow(dead_code)]
+pub fn shortest_line(lines: &[crate::parser::LogLine]) -> Option<&crate::parser::LogLine> {
+    lines
+        .iter()
+        .filter(|l| !l.raw.trim().is_empty())
+        .min_by_key(|l| l.raw.len())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
