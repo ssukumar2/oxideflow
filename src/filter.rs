@@ -154,6 +154,21 @@ pub fn extract_ipv4(lines: &[LogLine]) -> Vec<String> {
     extract_matches(lines, pattern).unwrap_or_default()
 }
 
+/// Extract HTTP status codes (3-digit numbers in 1xx-5xx range) with their occurrence counts.
+#[allow(dead_code)]
+pub fn http_status_counts(lines: &[LogLine]) -> std::collections::HashMap<u16, usize> {
+    let re = regex::Regex::new(r"\b([1-5]\d{2})\b").unwrap();
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Ok(code) = cap[1].parse::<u16>() {
+                *counts.entry(code).or_insert(0) += 1;
+            }
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
