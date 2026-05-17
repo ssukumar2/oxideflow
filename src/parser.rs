@@ -154,4 +154,29 @@ mod tests {
         assert_eq!(lines[0].line_number, 1);
         assert_eq!(lines[1].level, Some("ERROR".into()));
     }
+
+    #[test]
+    fn severity_parses_case_insensitive() {
+        assert_eq!(
+            super::Severity::from_str("error"),
+            Some(super::Severity::Error)
+        );
+        assert_eq!(
+            super::Severity::from_str("WARNING"),
+            Some(super::Severity::Warn)
+        );
+        assert_eq!(super::Severity::from_str("bogus"), None);
+    }
+
+    #[test]
+    fn severity_ordering() {
+        assert!(super::Severity::Error > super::Severity::Warn);
+        assert!(super::Severity::Trace < super::Severity::Info);
+    }
+
+    #[test]
+    fn severity_as_str_roundtrip() {
+        let s = super::Severity::Info;
+        assert_eq!(s.as_str(), "INFO");
+    }
 }
