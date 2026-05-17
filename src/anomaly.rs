@@ -31,6 +31,6 @@ pub fn detect_error_spikes(lines: &[LogLine], threshold_multiplier: f64) -> Vec<
         .into_iter()
         .filter(|(_, c)| (*c as f64) > threshold)
         .collect();
-    spikes.sort_by(|a, b| b.1.cmp(&a.1));
+    spikes.sort_by_key(|b| std::cmp::Reverse(b.1));
     spikes
 }

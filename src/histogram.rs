@@ -11,11 +11,7 @@ pub fn render(data: &[(String, usize)], max_width: usize) -> String {
     let max_label = data.iter().map(|(l, _)| l.len()).max().unwrap_or(0);
     let mut out = String::new();
     for (label, count) in data {
-        let bar_len = if max_count == 0 {
-            0
-        } else {
-            (count * max_width) / max_count
-        };
+        let bar_len = (count * max_width).checked_div(max_count).unwrap_or(0);
         let bar = "#".repeat(bar_len);
         out.push_str(&format!(
             "{:<width$}  {} ({})\n",
