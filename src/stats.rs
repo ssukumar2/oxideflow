@@ -66,6 +66,30 @@ pub fn shortest_line(lines: &[crate::parser::LogLine]) -> Option<&crate::parser:
         .min_by_key(|l| l.raw.len())
 }
 
+/// Calculate lines per second between first and last timestamp in the slice.
+/// Returns 0.0 if no valid timestamps are found.
+#[allow(dead_code)]
+pub fn throughput_per_sec(lines: &[crate::parser::LogLine]) -> f64 {
+    let re = regex::Regex::new(r"(\d{2}):(\d{2}):(\d{2})").unwrap();
+    let mut times: Vec<u64> = Vec::new();
+    for l in lines {
+        if let Some(c) = re.captures(&l.raw) {
+            let h: u64 = c[1].parse().unwrap_or(0);
+            let m: u64 = c[2].parse().unwrap_or(0);
+            let s: u64 = c[3].parse().unwrap_or(0);
+            times.push(h * 3600 + m * 60 + s);
+        }
+    }
+    if times.len() < 2 {
+        return 0.0;
+    }
+    let span = times.iter().max().unwrap() - times.iter().min().unwrap();
+    if span == 0 {
+        return 0.0;
+    }
+    lines.len() as f64 / span as f64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
