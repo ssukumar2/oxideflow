@@ -90,6 +90,30 @@ pub fn throughput_per_sec(lines: &[crate::parser::LogLine]) -> f64 {
     lines.len() as f64 / span as f64
 }
 
+/// Percentage breakdown by level. Returns (level, percentage) pairs sorted descending.
+#[allow(dead_code)]
+pub fn level_percentages(lines: &[crate::parser::LogLine]) -> Vec<(String, f64)> {
+    if lines.is_empty() {
+        return Vec::new();
+    }
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for l in lines {
+        let key = l
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        *counts.entry(key).or_insert(0) += 1;
+    }
+    let total = lines.len() as f64;
+    let mut v: Vec<(String, f64)> = counts
+        .into_iter()
+        .map(|(k, v)| (k, (v as f64 / total) * 100.0))
+        .collect();
+    v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
