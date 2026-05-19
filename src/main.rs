@@ -17,6 +17,7 @@ mod parser;
 pub mod redact;
 pub mod search;
 pub mod stats;
+pub mod summary;
 pub mod timefilter;
 
 #[derive(Parser)]
