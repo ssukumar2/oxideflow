@@ -142,6 +142,20 @@ pub fn average_line_length(lines: &[LogLine]) -> usize {
     total_bytes(lines) / lines.len()
 }
 
+/// Return the first `n` lines (or all if fewer exist).
+#[allow(dead_code)]
+pub fn head_n(lines: &[LogLine], n: usize) -> Vec<&LogLine> {
+    lines.iter().take(n).collect()
+}
+
+/// Return the last `n` lines (or all if fewer exist).
+#[allow(dead_code)]
+pub fn tail_n(lines: &[LogLine], n: usize) -> Vec<&LogLine> {
+    let len = lines.len();
+    let start = len.saturating_sub(n);
+    lines[start..].iter().collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
