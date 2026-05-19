@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 pub mod anomaly;
+pub mod cluster;
 pub mod config;
 pub mod dedup;
 pub mod error;
