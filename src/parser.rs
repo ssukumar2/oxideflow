@@ -142,6 +142,98 @@ pub fn average_line_length(lines: &[LogLine]) -> usize {
     total_bytes(lines) / lines.len()
 }
 
+/// Return the first `n` lines (or all if fewer exist).
+#[allow(dead_code)]
+pub fn head_n(lines: &[LogLine], n: usize) -> Vec<&LogLine> {
+    lines.iter().take(n).collect()
+}
+
+/// Return the last `n` lines (or all if fewer exist).
+#[allow(dead_code)]
+pub fn tail_n(lines: &[LogLine], n: usize) -> Vec<&LogLine> {
+    let len = lines.len();
+    let start = len.saturating_sub(n);
+    lines[start..].iter().collect()
+}
+
+/// Identify lines that look like stack trace frames (indented "at" patterns).
+#[allow(dead_code)]
+pub fn is_stack_frame(line: &LogLine) -> bool {
+    let trimmed = line.raw.trim_start();
+    trimmed.starts_with("at ")
+        || trimmed.starts_with("Caused by:")
+        || trimmed.starts_with("... ")
+        || trimmed.starts_with("File \"")
+}
+
+/// Group consecutive stack frames under the preceding error line.
+#[allow(dead_code)]
+pub fn group_stack_traces(lines: &[LogLine]) -> Vec<Vec<&LogLine>> {
+    let mut groups: Vec<Vec<&LogLine>> = Vec::new();
+    let mut current: Vec<&LogLine> = Vec::new();
+    for l in lines {
+        if is_stack_frame(l) {
+            current.push(l);
+        } else {
+            if !current.is_empty() {
+                groups.push(std::mem::take(&mut current));
+            }
+            current.push(l);
+        }
+    }
+    if !current.is_empty() {
+        groups.push(current);
+    }
+    groups
+}
+
+/// Read a file line-by-line, calling `callback` for each parsed LogLine.
+/// Memory-efficient for files too large to load entirely.
+#[allow(dead_code)]
+pub fn read_streaming<F>(path: &std::path::Path, mut callback: F) -> std::io::Result<usize>
+where
+    F: FnMut(LogLine),
+{
+    use std::io::BufRead;
+    let file = std::fs::File::open(path)?;
+    let reader = std::io::BufReader::new(file);
+    let mut count = 0usize;
+    for (i, line_res) in reader.lines().enumerate() {
+        let raw = line_res?;
+        let parsed = parse_line(&raw, i + 1);
+        callback(parsed);
+        count += 1;
+    }
+    Ok(count)
+}
+
+/// Normalize all level variants to canonical uppercase forms.
+/// WARNING/WARN → WARN, ERR/ERROR → ERROR, etc.
+#[allow(dead_code)]
+pub fn normalize_levels(lines: &[LogLine]) -> Vec<LogLine> {
+    lines
+        .iter()
+        .map(|l| {
+            let normalized = l
+                .level
+                .as_deref()
+                .map(|lvl| match lvl.to_uppercase().as_str() {
+                    "WARNING" | "WARN" => "WARN".to_string(),
+                    "ERR" | "ERROR" | "FATAL" | "CRITICAL" => "ERROR".to_string(),
+                    "DBG" | "DEBUG" => "DEBUG".to_string(),
+                    "INF" | "INFO" => "INFO".to_string(),
+                    "TRC" | "TRACE" | "VERBOSE" => "TRACE".to_string(),
+                    other => other.to_string(),
+                });
+            LogLine {
+                line_number: l.line_number,
+                level: normalized,
+                raw: l.raw.clone(),
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

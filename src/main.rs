@@ -5,18 +5,24 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 pub mod anomaly;
+pub mod cluster;
 pub mod config;
 pub mod dedup;
+pub mod diff;
+pub mod error;
 mod filter;
 pub mod follow;
 pub mod histogram;
 pub mod merge;
+pub mod metrics;
 pub mod output;
 mod parser;
 pub mod redact;
 pub mod search;
 pub mod stats;
+pub mod summary;
 pub mod timefilter;
+pub mod tokenize;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]

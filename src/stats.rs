@@ -66,6 +66,54 @@ pub fn shortest_line(lines: &[crate::parser::LogLine]) -> Option<&crate::parser:
         .min_by_key(|l| l.raw.len())
 }
 
+/// Calculate lines per second between first and last timestamp in the slice.
+/// Returns 0.0 if no valid timestamps are found.
+#[allow(dead_code)]
+pub fn throughput_per_sec(lines: &[crate::parser::LogLine]) -> f64 {
+    let re = regex::Regex::new(r"(\d{2}):(\d{2}):(\d{2})").unwrap();
+    let mut times: Vec<u64> = Vec::new();
+    for l in lines {
+        if let Some(c) = re.captures(&l.raw) {
+            let h: u64 = c[1].parse().unwrap_or(0);
+            let m: u64 = c[2].parse().unwrap_or(0);
+            let s: u64 = c[3].parse().unwrap_or(0);
+            times.push(h * 3600 + m * 60 + s);
+        }
+    }
+    if times.len() < 2 {
+        return 0.0;
+    }
+    let span = times.iter().max().unwrap() - times.iter().min().unwrap();
+    if span == 0 {
+        return 0.0;
+    }
+    lines.len() as f64 / span as f64
+}
+
+/// Percentage breakdown by level. Returns (level, percentage) pairs sorted descending.
+#[allow(dead_code)]
+pub fn level_percentages(lines: &[crate::parser::LogLine]) -> Vec<(String, f64)> {
+    if lines.is_empty() {
+        return Vec::new();
+    }
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for l in lines {
+        let key = l
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        *counts.entry(key).or_insert(0) += 1;
+    }
+    let total = lines.len() as f64;
+    let mut v: Vec<(String, f64)> = counts
+        .into_iter()
+        .map(|(k, v)| (k, (v as f64 / total) * 100.0))
+        .collect();
+    v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

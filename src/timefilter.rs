@@ -38,6 +38,32 @@ impl TimeFilter {
     }
 }
 
+/// Parse a HH:MM:SS substring at the start of `raw` into seconds since midnight.
+#[allow(dead_code)]
+pub fn parse_time_to_seconds(raw: &str) -> Option<u64> {
+    let re = regex::Regex::new(r"(\d{2}):(\d{2}):(\d{2})").unwrap();
+    let caps = re.captures(raw)?;
+    let h: u64 = caps[1].parse().ok()?;
+    let m: u64 = caps[2].parse().ok()?;
+    let s: u64 = caps[3].parse().ok()?;
+    if h > 23 || m > 59 || s > 59 {
+        return None;
+    }
+    Some(h * 3600 + m * 60 + s)
+}
+
+/// Compute the time gap in seconds between consecutive log lines.
+#[allow(dead_code)]
+pub fn time_gaps(lines: &[crate::parser::LogLine]) -> Vec<i64> {
+    let mut times: Vec<i64> = Vec::new();
+    for l in lines {
+        if let Some(t) = parse_time_to_seconds(&l.raw) {
+            times.push(t as i64);
+        }
+    }
+    times.windows(2).map(|w| w[1] - w[0]).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

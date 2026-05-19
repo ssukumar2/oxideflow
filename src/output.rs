@@ -77,3 +77,19 @@ pub fn to_csv(lines: &[crate::parser::LogLine]) -> String {
     }
     out
 }
+
+/// Serialize lines as newline-delimited JSON (one object per line).
+#[allow(dead_code)]
+pub fn to_ndjson(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::new();
+    for line in lines {
+        let obj = serde_json::json!({
+            "line_number": line.line_number,
+            "level": line.level,
+            "raw": line.raw,
+        });
+        out.push_str(&serde_json::to_string(&obj).unwrap_or_default());
+        out.push('\n');
+    }
+    out
+}
