@@ -207,6 +207,33 @@ where
     Ok(count)
 }
 
+/// Normalize all level variants to canonical uppercase forms.
+/// WARNING/WARN → WARN, ERR/ERROR → ERROR, etc.
+#[allow(dead_code)]
+pub fn normalize_levels(lines: &[LogLine]) -> Vec<LogLine> {
+    lines
+        .iter()
+        .map(|l| {
+            let normalized = l
+                .level
+                .as_deref()
+                .map(|lvl| match lvl.to_uppercase().as_str() {
+                    "WARNING" | "WARN" => "WARN".to_string(),
+                    "ERR" | "ERROR" | "FATAL" | "CRITICAL" => "ERROR".to_string(),
+                    "DBG" | "DEBUG" => "DEBUG".to_string(),
+                    "INF" | "INFO" => "INFO".to_string(),
+                    "TRC" | "TRACE" | "VERBOSE" => "TRACE".to_string(),
+                    other => other.to_string(),
+                });
+            LogLine {
+                line_number: l.line_number,
+                level: normalized,
+                raw: l.raw.clone(),
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
