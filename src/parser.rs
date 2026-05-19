@@ -156,6 +156,37 @@ pub fn tail_n(lines: &[LogLine], n: usize) -> Vec<&LogLine> {
     lines[start..].iter().collect()
 }
 
+/// Identify lines that look like stack trace frames (indented "at" patterns).
+#[allow(dead_code)]
+pub fn is_stack_frame(line: &LogLine) -> bool {
+    let trimmed = line.raw.trim_start();
+    trimmed.starts_with("at ")
+        || trimmed.starts_with("Caused by:")
+        || trimmed.starts_with("... ")
+        || trimmed.starts_with("File \"")
+}
+
+/// Group consecutive stack frames under the preceding error line.
+#[allow(dead_code)]
+pub fn group_stack_traces(lines: &[LogLine]) -> Vec<Vec<&LogLine>> {
+    let mut groups: Vec<Vec<&LogLine>> = Vec::new();
+    let mut current: Vec<&LogLine> = Vec::new();
+    for l in lines {
+        if is_stack_frame(l) {
+            current.push(l);
+        } else {
+            if !current.is_empty() {
+                groups.push(std::mem::take(&mut current));
+            }
+            current.push(l);
+        }
+    }
+    if !current.is_empty() {
+        groups.push(current);
+    }
+    groups
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
