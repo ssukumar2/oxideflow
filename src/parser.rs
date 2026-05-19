@@ -187,6 +187,26 @@ pub fn group_stack_traces(lines: &[LogLine]) -> Vec<Vec<&LogLine>> {
     groups
 }
 
+/// Read a file line-by-line, calling `callback` for each parsed LogLine.
+/// Memory-efficient for files too large to load entirely.
+#[allow(dead_code)]
+pub fn read_streaming<F>(path: &std::path::Path, mut callback: F) -> std::io::Result<usize>
+where
+    F: FnMut(LogLine),
+{
+    use std::io::BufRead;
+    let file = std::fs::File::open(path)?;
+    let reader = std::io::BufReader::new(file);
+    let mut count = 0usize;
+    for (i, line_res) in reader.lines().enumerate() {
+        let raw = line_res?;
+        let parsed = parse_line(&raw, i + 1);
+        callback(parsed);
+        count += 1;
+    }
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
