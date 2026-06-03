@@ -20,6 +20,7 @@ pub mod output;
 mod parser;
 pub mod ratelimit;
 pub mod redact;
+pub mod replay;
 pub mod sample;
 pub mod search;
 pub mod stats;
