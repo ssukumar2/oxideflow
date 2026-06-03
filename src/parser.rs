@@ -234,6 +234,37 @@ pub fn normalize_levels(lines: &[LogLine]) -> Vec<LogLine> {
         .collect()
 }
 
+/// Detect if a line looks like JSON (starts with `{` and ends with `}`).
+#[allow(dead_code)]
+pub fn is_json_line(raw: &str) -> bool {
+    let t = raw.trim();
+    t.starts_with('{') && t.ends_with('}')
+}
+
+/// Extract a level from a JSON log line by looking for "level" or "severity" key.
+#[allow(dead_code)]
+pub fn extract_json_level(raw: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(raw).ok()?;
+    v.get("level")
+        .or_else(|| v.get("severity"))
+        .or_else(|| v.get("lvl"))
+        .and_then(|x| x.as_str())
+        .map(|s| s.to_uppercase())
+}
+
+/// Compute a stable u64 fingerprint of the log content.
+/// Useful for detecting whether two analyses ran on the same input.
+#[allow(dead_code)]
+pub fn fingerprint(lines: &[LogLine]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    lines.len().hash(&mut h);
+    for line in lines {
+        line.raw.hash(&mut h);
+    }
+    h.finish()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

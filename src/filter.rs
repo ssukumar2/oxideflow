@@ -185,6 +185,97 @@ pub fn session_id_counts(lines: &[LogLine]) -> std::collections::HashMap<String,
     counts
 }
 
+/// Extract URLs from log content.
+#[allow(dead_code)]
+pub fn extract_urls(lines: &[LogLine]) -> Vec<String> {
+    let re = regex::Regex::new(r"https?://[^\s\)\]\}]+").unwrap();
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            let s = m.as_str().to_string();
+            if seen.insert(s.clone()) {
+                out.push(s);
+            }
+        }
+    }
+    out
+}
+
+/// Extract Unix-style file paths from log content.
+#[allow(dead_code)]
+pub fn extract_paths(lines: &[LogLine]) -> Vec<String> {
+    let re = regex::Regex::new(r"(?:^|\s)(/[A-Za-z0-9_./\-]+)").unwrap();
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Some(m) = cap.get(1) {
+                let s = m.as_str().to_string();
+                if seen.insert(s.clone()) {
+                    out.push(s);
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Group IPv4 addresses by /24 subnet prefix and count occurrences.
+#[allow(dead_code)]
+pub fn ip_subnet_counts(lines: &[LogLine]) -> std::collections::HashMap<String, usize> {
+    let ips = extract_ipv4(lines);
+    let mut counts = std::collections::HashMap::new();
+    for ip in ips {
+        let parts: Vec<&str> = ip.split('.').collect();
+        if parts.len() == 4 {
+            let subnet = format!("{}.{}.{}.0/24", parts[0], parts[1], parts[2]);
+            *counts.entry(subnet).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
+/// Classify a line into a coarse error category based on keywords.
+#[allow(dead_code)]
+pub fn classify_error(line: &LogLine) -> Option<&'static str> {
+    let raw = line.raw.to_lowercase();
+    if raw.contains("timeout") || raw.contains("timed out") {
+        Some("timeout")
+    } else if raw.contains("connection refused") || raw.contains("refused") {
+        Some("connection")
+    } else if raw.contains("permission denied")
+        || raw.contains("forbidden")
+        || raw.contains("unauthorized")
+    {
+        Some("auth")
+    } else if raw.contains("not found") || raw.contains("404") {
+        Some("not_found")
+    } else if raw.contains("out of memory") || raw.contains("oom") {
+        Some("memory")
+    } else if raw.contains("deadlock") || raw.contains("lock wait") {
+        Some("concurrency")
+    } else if raw.contains("syntax error") || raw.contains("parse error") {
+        Some("syntax")
+    } else if raw.contains("disk full") || raw.contains("no space") {
+        Some("disk")
+    } else {
+        None
+    }
+}
+
+/// Group lines by error category, returning counts per category.
+#[allow(dead_code)]
+pub fn error_category_counts(lines: &[LogLine]) -> std::collections::HashMap<&'static str, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        if let Some(cat) = classify_error(line) {
+            *counts.entry(cat).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
