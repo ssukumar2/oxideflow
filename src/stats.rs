@@ -114,6 +114,18 @@ pub fn level_percentages(lines: &[crate::parser::LogLine]) -> Vec<(String, f64)>
     v
 }
 
+/// Total Unicode character count (not bytes) across all lines.
+#[allow(dead_code)]
+pub fn total_chars(lines: &[crate::parser::LogLine]) -> usize {
+    lines.iter().map(|l| l.raw.chars().count()).sum()
+}
+
+/// Count lines containing any non-ASCII character.
+#[allow(dead_code)]
+pub fn non_ascii_line_count(lines: &[crate::parser::LogLine]) -> usize {
+    lines.iter().filter(|l| !l.raw.is_ascii()).count()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
