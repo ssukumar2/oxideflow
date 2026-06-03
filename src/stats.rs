@@ -126,6 +126,30 @@ pub fn non_ascii_line_count(lines: &[crate::parser::LogLine]) -> usize {
     lines.iter().filter(|l| !l.raw.is_ascii()).count()
 }
 
+/// Count transitions between consecutive log levels.
+/// Returns ((from_level, to_level), count) pairs sorted descending by count.
+#[allow(dead_code)]
+pub fn level_transitions(lines: &[crate::parser::LogLine]) -> Vec<((String, String), usize)> {
+    let mut counts: std::collections::HashMap<(String, String), usize> =
+        std::collections::HashMap::new();
+    for pair in lines.windows(2) {
+        let a = pair[0]
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        let b = pair[1]
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        *counts.entry((a, b)).or_insert(0) += 1;
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by_key(|b| std::cmp::Reverse(b.1));
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
