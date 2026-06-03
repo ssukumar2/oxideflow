@@ -185,6 +185,42 @@ pub fn session_id_counts(lines: &[LogLine]) -> std::collections::HashMap<String,
     counts
 }
 
+/// Extract URLs from log content.
+#[allow(dead_code)]
+pub fn extract_urls(lines: &[LogLine]) -> Vec<String> {
+    let re = regex::Regex::new(r"https?://[^\s\)\]\}]+").unwrap();
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for m in re.find_iter(&line.raw) {
+            let s = m.as_str().to_string();
+            if seen.insert(s.clone()) {
+                out.push(s);
+            }
+        }
+    }
+    out
+}
+
+/// Extract Unix-style file paths from log content.
+#[allow(dead_code)]
+pub fn extract_paths(lines: &[LogLine]) -> Vec<String> {
+    let re = regex::Regex::new(r"(?:^|\s)(/[A-Za-z0-9_./\-]+)").unwrap();
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Some(m) = cap.get(1) {
+                let s = m.as_str().to_string();
+                if seen.insert(s.clone()) {
+                    out.push(s);
+                }
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
