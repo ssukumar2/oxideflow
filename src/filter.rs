@@ -221,6 +221,21 @@ pub fn extract_paths(lines: &[LogLine]) -> Vec<String> {
     out
 }
 
+/// Group IPv4 addresses by /24 subnet prefix and count occurrences.
+#[allow(dead_code)]
+pub fn ip_subnet_counts(lines: &[LogLine]) -> std::collections::HashMap<String, usize> {
+    let ips = extract_ipv4(lines);
+    let mut counts = std::collections::HashMap::new();
+    for ip in ips {
+        let parts: Vec<&str> = ip.split('.').collect();
+        if parts.len() == 4 {
+            let subnet = format!("{}.{}.{}.0/24", parts[0], parts[1], parts[2]);
+            *counts.entry(subnet).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
