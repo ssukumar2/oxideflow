@@ -252,6 +252,19 @@ pub fn extract_json_level(raw: &str) -> Option<String> {
         .map(|s| s.to_uppercase())
 }
 
+/// Compute a stable u64 fingerprint of the log content.
+/// Useful for detecting whether two analyses ran on the same input.
+#[allow(dead_code)]
+pub fn fingerprint(lines: &[LogLine]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    lines.len().hash(&mut h);
+    for line in lines {
+        line.raw.hash(&mut h);
+    }
+    h.finish()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
