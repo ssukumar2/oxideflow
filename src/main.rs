@@ -18,6 +18,7 @@ pub mod merge;
 pub mod metrics;
 pub mod output;
 mod parser;
+pub mod query;
 pub mod ratelimit;
 pub mod redact;
 pub mod replay;
