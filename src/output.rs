@@ -93,3 +93,28 @@ pub fn to_ndjson(lines: &[crate::parser::LogLine]) -> String {
     }
     out
 }
+
+/// Render a markdown report from a summary::Report.
+#[allow(dead_code)]
+pub fn report_to_markdown(r: &crate::summary::Report) -> String {
+    let mut out = String::new();
+    out.push_str("# Log Analysis Report\n\n");
+    out.push_str(&format!("- **Total lines**: {}\n", r.total_lines));
+    out.push_str(&format!("- **Total bytes**: {}\n", r.total_bytes));
+    out.push_str(&format!("- **Error rate**: {:.2}%\n", r.error_rate));
+    out.push_str(&format!(
+        "- **Throughput**: {:.2} lines/sec\n\n",
+        r.throughput_per_sec
+    ));
+    out.push_str("## Level distribution\n\n");
+    for (level, pct) in &r.level_breakdown {
+        out.push_str(&format!("- `{}`: {:.2}%\n", level, pct));
+    }
+    if !r.top_errors.is_empty() {
+        out.push_str("\n## Top errors\n\n");
+        for (msg, count) in &r.top_errors {
+            out.push_str(&format!("- ({}) `{}`\n", count, msg));
+        }
+    }
+    out
+}
