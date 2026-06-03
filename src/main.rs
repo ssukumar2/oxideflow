@@ -19,6 +19,7 @@ pub mod output;
 mod parser;
 pub mod ratelimit;
 pub mod redact;
+pub mod sample;
 pub mod search;
 pub mod stats;
 pub mod summary;
