@@ -236,6 +236,46 @@ pub fn ip_subnet_counts(lines: &[LogLine]) -> std::collections::HashMap<String, 
     counts
 }
 
+/// Classify a line into a coarse error category based on keywords.
+#[allow(dead_code)]
+pub fn classify_error(line: &LogLine) -> Option<&'static str> {
+    let raw = line.raw.to_lowercase();
+    if raw.contains("timeout") || raw.contains("timed out") {
+        Some("timeout")
+    } else if raw.contains("connection refused") || raw.contains("refused") {
+        Some("connection")
+    } else if raw.contains("permission denied")
+        || raw.contains("forbidden")
+        || raw.contains("unauthorized")
+    {
+        Some("auth")
+    } else if raw.contains("not found") || raw.contains("404") {
+        Some("not_found")
+    } else if raw.contains("out of memory") || raw.contains("oom") {
+        Some("memory")
+    } else if raw.contains("deadlock") || raw.contains("lock wait") {
+        Some("concurrency")
+    } else if raw.contains("syntax error") || raw.contains("parse error") {
+        Some("syntax")
+    } else if raw.contains("disk full") || raw.contains("no space") {
+        Some("disk")
+    } else {
+        None
+    }
+}
+
+/// Group lines by error category, returning counts per category.
+#[allow(dead_code)]
+pub fn error_category_counts(lines: &[LogLine]) -> std::collections::HashMap<&'static str, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        if let Some(cat) = classify_error(line) {
+            *counts.entry(cat).or_insert(0) += 1;
+        }
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
