@@ -17,6 +17,7 @@ pub mod merge;
 pub mod metrics;
 pub mod output;
 mod parser;
+pub mod ratelimit;
 pub mod redact;
 pub mod search;
 pub mod stats;
