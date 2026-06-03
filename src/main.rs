@@ -12,6 +12,7 @@ pub mod diff;
 pub mod error;
 mod filter;
 pub mod follow;
+pub mod health;
 pub mod histogram;
 pub mod merge;
 pub mod metrics;
