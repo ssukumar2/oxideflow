@@ -310,6 +310,32 @@ pub fn json_field_counts(
     counts
 }
 
+/// Extract latency values in milliseconds from log content.
+/// Matches patterns like "took 123ms", "elapsed=45ms", "duration: 1234 ms".
+#[allow(dead_code)]
+pub fn extract_latencies_ms(lines: &[LogLine]) -> Vec<u64> {
+    let re = regex::Regex::new(r"(\d+)\s*ms\b").unwrap();
+    let mut out = Vec::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Ok(v) = cap[1].parse::<u64>() {
+                out.push(v);
+            }
+        }
+    }
+    out
+}
+
+/// Mean latency across all extracted samples.
+#[allow(dead_code)]
+pub fn mean_latency_ms(lines: &[LogLine]) -> f64 {
+    let v = extract_latencies_ms(lines);
+    if v.is_empty() {
+        return 0.0;
+    }
+    v.iter().sum::<u64>() as f64 / v.len() as f64
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
