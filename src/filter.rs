@@ -276,6 +276,145 @@ pub fn error_category_counts(lines: &[LogLine]) -> std::collections::HashMap<&'s
     counts
 }
 
+/// Extract values for a named JSON field across all lines that parse as JSON.
+#[allow(dead_code)]
+pub fn extract_json_field(lines: &[LogLine], field: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in lines {
+        if !crate::parser::is_json_line(&line.raw) {
+            continue;
+        }
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line.raw) {
+            if let Some(val) = v.get(field) {
+                let s = match val {
+                    serde_json::Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                };
+                out.push(s);
+            }
+        }
+    }
+    out
+}
+
+/// Count distinct values for a JSON field.
+#[allow(dead_code)]
+pub fn json_field_counts(
+    lines: &[LogLine],
+    field: &str,
+) -> std::collections::HashMap<String, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for v in extract_json_field(lines, field) {
+        *counts.entry(v).or_insert(0) += 1;
+    }
+    counts
+}
+
+/// Extract latency values in milliseconds from log content.
+/// Matches patterns like "took 123ms", "elapsed=45ms", "duration: 1234 ms".
+#[allow(dead_code)]
+pub fn extract_latencies_ms(lines: &[LogLine]) -> Vec<u64> {
+    let re = regex::Regex::new(r"(\d+)\s*ms\b").unwrap();
+    let mut out = Vec::new();
+    for line in lines {
+        for cap in re.captures_iter(&line.raw) {
+            if let Ok(v) = cap[1].parse::<u64>() {
+                out.push(v);
+            }
+        }
+    }
+    out
+}
+
+/// Mean latency across all extracted samples.
+#[allow(dead_code)]
+pub fn mean_latency_ms(lines: &[LogLine]) -> f64 {
+    let v = extract_latencies_ms(lines);
+    if v.is_empty() {
+        return 0.0;
+    }
+    v.iter().sum::<u64>() as f64 / v.len() as f64
+}
+
+/// For each IP, count how many lines reference it and what levels they appear at.
+#[allow(dead_code)]
+pub fn ip_activity(
+    lines: &[LogLine],
+) -> std::collections::HashMap<String, std::collections::HashMap<String, usize>> {
+    let re = regex::Regex::new(r"\b(?:\d{1,3}\.){3}\d{1,3}\b").unwrap();
+    let mut out: std::collections::HashMap<String, std::collections::HashMap<String, usize>> =
+        std::collections::HashMap::new();
+    for line in lines {
+        let level = line
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        for m in re.find_iter(&line.raw) {
+            let ip_entry = out.entry(m.as_str().to_string()).or_default();
+            *ip_entry.entry(level.clone()).or_insert(0) += 1;
+        }
+    }
+    out
+}
+
+/// Find IPs that have any ERROR-level activity.
+#[allow(dead_code)]
+pub fn suspect_ips(lines: &[LogLine]) -> Vec<String> {
+    let activity = ip_activity(lines);
+    let mut suspects: Vec<String> = activity
+        .into_iter()
+        .filter(|(_, levels)| levels.contains_key("ERROR"))
+        .map(|(ip, _)| ip)
+        .collect();
+    suspects.sort();
+    suspects
+}
+
+fn ipv4_to_u32(ip: &str) -> Option<u32> {
+    let parts: Vec<&str> = ip.split('.').collect();
+    if parts.len() != 4 {
+        return None;
+    }
+    let mut acc: u32 = 0;
+    for p in parts {
+        let n: u32 = p.parse().ok()?;
+        if n > 255 {
+            return None;
+        }
+        acc = (acc << 8) | n;
+    }
+    Some(acc)
+}
+
+/// Keep only lines containing an IPv4 inside the given CIDR (e.g. "10.0.0.0/8").
+#[allow(dead_code)]
+pub fn in_cidr<'a>(lines: &'a [LogLine], cidr: &str) -> Vec<&'a LogLine> {
+    let parts: Vec<&str> = cidr.split('/').collect();
+    if parts.len() != 2 {
+        return Vec::new();
+    }
+    let base = match ipv4_to_u32(parts[0]) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+    let bits: u32 = match parts[1].parse() {
+        Ok(v) if v <= 32 => v,
+        _ => return Vec::new(),
+    };
+    let mask: u32 = if bits == 0 { 0 } else { !0u32 << (32 - bits) };
+    let target = base & mask;
+    let re = regex::Regex::new(r"\b(?:\d{1,3}\.){3}\d{1,3}\b").unwrap();
+    lines
+        .iter()
+        .filter(|l| {
+            re.find_iter(&l.raw)
+                .filter_map(|m| ipv4_to_u32(m.as_str()))
+                .any(|ip| (ip & mask) == target)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

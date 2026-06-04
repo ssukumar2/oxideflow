@@ -118,3 +118,44 @@ pub fn report_to_markdown(r: &crate::summary::Report) -> String {
     }
     out
 }
+
+/// Serialize lines as YAML (no external dep, simple by-hand format).
+#[allow(dead_code)]
+pub fn to_yaml(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from("lines:\n");
+    for l in lines {
+        out.push_str(&format!("  - line_number: {}\n", l.line_number));
+        let level = l.level.as_deref().unwrap_or("null");
+        out.push_str(&format!("    level: {}\n", level));
+        let escaped = l.raw.replace('"', "\\\"").replace('\n', "\\n");
+        out.push_str(&format!("    raw: \"{}\"\n", escaped));
+    }
+    out
+}
+
+/// Render log lines as a standalone HTML table.
+#[allow(dead_code)]
+pub fn to_html(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from(
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>\
+        body{font-family:monospace;background:#1e1e1e;color:#ddd;}\
+        table{border-collapse:collapse;width:100%;}\
+        th,td{padding:4px 8px;border-bottom:1px solid #333;text-align:left;}\
+        .ERROR{color:#f55;}.WARN{color:#fb3;}.INFO{color:#5cf;}.DEBUG{color:#888;}\
+        </style></head><body><table><tr><th>#</th><th>Level</th><th>Message</th></tr>",
+    );
+    for line in lines {
+        let level = line.level.as_deref().unwrap_or("");
+        let escaped = line
+            .raw
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;");
+        out.push_str(&format!(
+            "<tr><td>{}</td><td class=\"{}\">{}</td><td>{}</td></tr>",
+            line.line_number, level, level, escaped
+        ));
+    }
+    out.push_str("</table></body></html>");
+    out
+}
