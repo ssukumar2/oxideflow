@@ -29,6 +29,7 @@ pub mod redact;
 pub mod replay;
 pub mod sample;
 pub mod schedule;
+pub mod score;
 pub mod search;
 pub mod stats;
 pub mod summary;
