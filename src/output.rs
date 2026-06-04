@@ -118,3 +118,17 @@ pub fn report_to_markdown(r: &crate::summary::Report) -> String {
     }
     out
 }
+
+/// Serialize lines as YAML (no external dep, simple by-hand format).
+#[allow(dead_code)]
+pub fn to_yaml(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from("lines:\n");
+    for l in lines {
+        out.push_str(&format!("  - line_number: {}\n", l.line_number));
+        let level = l.level.as_deref().unwrap_or("null");
+        out.push_str(&format!("    level: {}\n", level));
+        let escaped = l.raw.replace('"', "\\\"").replace('\n', "\\n");
+        out.push_str(&format!("    raw: \"{}\"\n", escaped));
+    }
+    out
+}
