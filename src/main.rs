@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+pub mod alert;
 pub mod anomaly;
 pub mod cluster;
 pub mod config;
