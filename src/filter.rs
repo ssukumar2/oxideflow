@@ -371,6 +371,50 @@ pub fn suspect_ips(lines: &[LogLine]) -> Vec<String> {
     suspects
 }
 
+fn ipv4_to_u32(ip: &str) -> Option<u32> {
+    let parts: Vec<&str> = ip.split('.').collect();
+    if parts.len() != 4 {
+        return None;
+    }
+    let mut acc: u32 = 0;
+    for p in parts {
+        let n: u32 = p.parse().ok()?;
+        if n > 255 {
+            return None;
+        }
+        acc = (acc << 8) | n;
+    }
+    Some(acc)
+}
+
+/// Keep only lines containing an IPv4 inside the given CIDR (e.g. "10.0.0.0/8").
+#[allow(dead_code)]
+pub fn in_cidr<'a>(lines: &'a [LogLine], cidr: &str) -> Vec<&'a LogLine> {
+    let parts: Vec<&str> = cidr.split('/').collect();
+    if parts.len() != 2 {
+        return Vec::new();
+    }
+    let base = match ipv4_to_u32(parts[0]) {
+        Some(v) => v,
+        None => return Vec::new(),
+    };
+    let bits: u32 = match parts[1].parse() {
+        Ok(v) if v <= 32 => v,
+        _ => return Vec::new(),
+    };
+    let mask: u32 = if bits == 0 { 0 } else { !0u32 << (32 - bits) };
+    let target = base & mask;
+    let re = regex::Regex::new(r"\b(?:\d{1,3}\.){3}\d{1,3}\b").unwrap();
+    lines
+        .iter()
+        .filter(|l| {
+            re.find_iter(&l.raw)
+                .filter_map(|m| ipv4_to_u32(m.as_str()))
+                .any(|ip| (ip & mask) == target)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
