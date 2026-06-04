@@ -276,6 +276,40 @@ pub fn error_category_counts(lines: &[LogLine]) -> std::collections::HashMap<&'s
     counts
 }
 
+/// Extract values for a named JSON field across all lines that parse as JSON.
+#[allow(dead_code)]
+pub fn extract_json_field(lines: &[LogLine], field: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for line in lines {
+        if !crate::parser::is_json_line(&line.raw) {
+            continue;
+        }
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line.raw) {
+            if let Some(val) = v.get(field) {
+                let s = match val {
+                    serde_json::Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                };
+                out.push(s);
+            }
+        }
+    }
+    out
+}
+
+/// Count distinct values for a JSON field.
+#[allow(dead_code)]
+pub fn json_field_counts(
+    lines: &[LogLine],
+    field: &str,
+) -> std::collections::HashMap<String, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for v in extract_json_field(lines, field) {
+        *counts.entry(v).or_insert(0) += 1;
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
