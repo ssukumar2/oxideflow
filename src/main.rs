@@ -27,6 +27,7 @@ pub mod query;
 pub mod ratelimit;
 pub mod redact;
 pub mod replay;
+pub mod report;
 pub mod sample;
 pub mod schedule;
 pub mod score;
