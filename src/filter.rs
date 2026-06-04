@@ -336,6 +336,41 @@ pub fn mean_latency_ms(lines: &[LogLine]) -> f64 {
     v.iter().sum::<u64>() as f64 / v.len() as f64
 }
 
+/// For each IP, count how many lines reference it and what levels they appear at.
+#[allow(dead_code)]
+pub fn ip_activity(
+    lines: &[LogLine],
+) -> std::collections::HashMap<String, std::collections::HashMap<String, usize>> {
+    let re = regex::Regex::new(r"\b(?:\d{1,3}\.){3}\d{1,3}\b").unwrap();
+    let mut out: std::collections::HashMap<String, std::collections::HashMap<String, usize>> =
+        std::collections::HashMap::new();
+    for line in lines {
+        let level = line
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        for m in re.find_iter(&line.raw) {
+            let ip_entry = out.entry(m.as_str().to_string()).or_default();
+            *ip_entry.entry(level.clone()).or_insert(0) += 1;
+        }
+    }
+    out
+}
+
+/// Find IPs that have any ERROR-level activity.
+#[allow(dead_code)]
+pub fn suspect_ips(lines: &[LogLine]) -> Vec<String> {
+    let activity = ip_activity(lines);
+    let mut suspects: Vec<String> = activity
+        .into_iter()
+        .filter(|(_, levels)| levels.contains_key("ERROR"))
+        .map(|(ip, _)| ip)
+        .collect();
+    suspects.sort();
+    suspects
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
