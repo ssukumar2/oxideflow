@@ -150,6 +150,28 @@ pub fn level_transitions(lines: &[crate::parser::LogLine]) -> Vec<((String, Stri
     v
 }
 
+/// Compute the p-th percentile of line lengths (p in 0.0..=100.0).
+#[allow(dead_code)]
+pub fn line_length_percentile(lines: &[crate::parser::LogLine], p: f64) -> usize {
+    if lines.is_empty() {
+        return 0;
+    }
+    let mut lens: Vec<usize> = lines.iter().map(|l| l.raw.len()).collect();
+    lens.sort_unstable();
+    let idx = ((p / 100.0) * (lens.len() - 1) as f64).round() as usize;
+    lens[idx.min(lens.len() - 1)]
+}
+
+/// Standard p50/p90/p99 in one call.
+#[allow(dead_code)]
+pub fn length_quantiles(lines: &[crate::parser::LogLine]) -> (usize, usize, usize) {
+    (
+        line_length_percentile(lines, 50.0),
+        line_length_percentile(lines, 90.0),
+        line_length_percentile(lines, 99.0),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
