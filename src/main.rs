@@ -7,6 +7,7 @@ use std::path::PathBuf;
 pub mod alert;
 pub mod anomaly;
 pub mod bloom;
+pub mod cache;
 pub mod cluster;
 pub mod compress;
 pub mod config;
