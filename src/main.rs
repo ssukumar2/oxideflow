@@ -36,6 +36,7 @@ pub mod sample;
 pub mod schedule;
 pub mod score;
 pub mod search;
+pub mod simulate;
 pub mod stats;
 pub mod summary;
 pub mod tag;
