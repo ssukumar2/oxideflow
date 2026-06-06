@@ -36,3 +36,24 @@ pub fn redact_all(lines: &[LogLine]) -> Vec<LogLine> {
     let stage1 = redact_emails(lines);
     redact_tokens(&stage1)
 }
+
+/// Check if every line in the redacted set is indistinguishable from at least
+/// `k-1` other lines (k-anonymity property).
+#[allow(dead_code)]
+pub fn satisfies_k_anonymity(lines: &[LogLine], k: usize) -> bool {
+    let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+    for line in lines {
+        *counts.entry(line.raw.as_str()).or_insert(0) += 1;
+    }
+    counts.values().all(|&c| c >= k)
+}
+
+/// Return the smallest equivalence class size in the redacted log.
+#[allow(dead_code)]
+pub fn min_equivalence_class(lines: &[LogLine]) -> usize {
+    let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+    for line in lines {
+        *counts.entry(line.raw.as_str()).or_insert(0) += 1;
+    }
+    counts.values().copied().min().unwrap_or(0)
+}

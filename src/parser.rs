@@ -265,6 +265,30 @@ pub fn fingerprint(lines: &[LogLine]) -> u64 {
     h.finish()
 }
 
+/// Compute a per-line FNV-1a hash for deduplication or content addressing.
+#[allow(dead_code)]
+pub fn fnv1a_line(line: &LogLine) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for byte in line.raw.bytes() {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+/// Build a hash-to-line-numbers index for content-addressed lookups.
+#[allow(dead_code)]
+pub fn hash_index(lines: &[LogLine]) -> std::collections::HashMap<u64, Vec<usize>> {
+    let mut index: std::collections::HashMap<u64, Vec<usize>> = std::collections::HashMap::new();
+    for line in lines {
+        index
+            .entry(fnv1a_line(line))
+            .or_default()
+            .push(line.line_number);
+    }
+    index
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

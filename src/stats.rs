@@ -172,6 +172,29 @@ pub fn length_quantiles(lines: &[crate::parser::LogLine]) -> (usize, usize, usiz
     )
 }
 
+/// GROUP BY level, returning (level, count, total_bytes) tuples.
+#[allow(dead_code)]
+pub fn group_by_level(lines: &[crate::parser::LogLine]) -> Vec<(String, usize, usize)> {
+    let mut groups: std::collections::HashMap<String, (usize, usize)> =
+        std::collections::HashMap::new();
+    for l in lines {
+        let key = l
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        let entry = groups.entry(key).or_insert((0, 0));
+        entry.0 += 1;
+        entry.1 += l.raw.len();
+    }
+    let mut v: Vec<(String, usize, usize)> = groups
+        .into_iter()
+        .map(|(k, (count, bytes))| (k, count, bytes))
+        .collect();
+    v.sort_by_key(|b| std::cmp::Reverse(b.1));
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

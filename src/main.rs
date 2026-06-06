@@ -6,6 +6,9 @@ use std::path::PathBuf;
 
 pub mod alert;
 pub mod anomaly;
+pub mod audit;
+pub mod bloom;
+pub mod cache;
 pub mod cluster;
 pub mod compress;
 pub mod config;
@@ -15,6 +18,8 @@ pub mod diff;
 pub mod error;
 mod filter;
 pub mod follow;
+pub mod forecast;
+pub mod geofold;
 pub mod health;
 pub mod histogram;
 pub mod merge;
@@ -32,10 +37,14 @@ pub mod sample;
 pub mod schedule;
 pub mod score;
 pub mod search;
+pub mod simulate;
 pub mod stats;
 pub mod summary;
+pub mod tag;
 pub mod timefilter;
 pub mod tokenize;
+pub mod verify;
+pub mod watch;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]

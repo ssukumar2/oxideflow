@@ -66,6 +66,32 @@ pub fn top_errors(lines: &[crate::parser::LogLine], n: usize) -> Vec<(String, us
     v
 }
 
+/// Normalize a line by replacing numbers and UUIDs with placeholders,
+/// so "request 1234 took 50ms" and "request 5678 took 80ms" collapse.
+#[allow(dead_code)]
+pub fn normalize_for_dedup(raw: &str) -> String {
+    let re_num = regex::Regex::new(r"\d+").unwrap();
+    let re_uuid = regex::Regex::new(
+        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+    )
+    .unwrap();
+    let stage1 = re_uuid.replace_all(raw, "<UUID>").to_string();
+    re_num.replace_all(&stage1, "<N>").to_string()
+}
+
+/// Count distinct normalized message patterns.
+#[allow(dead_code)]
+pub fn fuzzy_pattern_counts(
+    lines: &[crate::parser::LogLine],
+) -> std::collections::HashMap<String, usize> {
+    let mut counts = std::collections::HashMap::new();
+    for line in lines {
+        let pattern = normalize_for_dedup(&line.raw);
+        *counts.entry(pattern).or_insert(0) += 1;
+    }
+    counts
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

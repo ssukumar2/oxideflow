@@ -29,7 +29,11 @@ jobs:
       - name: Format check
         run: cargo fmt --all -- --check
       - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cargo clippy --all-targets -- -D warnings
       - name: Build
         run: cargo build --verbose
       - name: Test
