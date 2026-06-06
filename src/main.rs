@@ -39,6 +39,7 @@ pub mod stats;
 pub mod summary;
 pub mod timefilter;
 pub mod tokenize;
+pub mod verify;
 
 #[derive(Parser)]
 #[command(name = "oxideflow")]
