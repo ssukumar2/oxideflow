@@ -38,6 +38,7 @@ pub mod score;
 pub mod search;
 pub mod stats;
 pub mod summary;
+pub mod tag;
 pub mod timefilter;
 pub mod tokenize;
 pub mod verify;
