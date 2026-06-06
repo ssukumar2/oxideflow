@@ -17,6 +17,7 @@ pub mod diff;
 pub mod error;
 mod filter;
 pub mod follow;
+pub mod geofold;
 pub mod health;
 pub mod histogram;
 pub mod merge;
