@@ -105,3 +105,76 @@ pub fn from_level_transitions(transitions: &[((String, String), usize)]) -> Grap
     }
     g
 }
+
+/// Apply Fruchterman-Reingold force-directed layout.
+/// Nodes repel each other, edges pull connected nodes together.
+/// Runs for `iterations` steps within an `area` x `area` square.
+#[allow(dead_code)]
+pub fn force_directed_layout(graph: &mut Graph, area: f64, iterations: usize) {
+    let n = graph.nodes.len();
+    if n == 0 {
+        return;
+    }
+
+    // Initial random-ish placement using node index for determinism
+    for (i, node) in graph.nodes.iter_mut().enumerate() {
+        let angle = (i as f64) * 2.4;
+        let radius = area / 3.0;
+        node.x = area / 2.0 + radius * angle.cos();
+        node.y = area / 2.0 + radius * angle.sin();
+    }
+
+    let k = (area * area / n as f64).sqrt();
+    let mut temperature = area / 10.0;
+    let cooling = temperature / iterations as f64;
+
+    for _ in 0..iterations {
+        let mut displacements: Vec<(f64, f64)> = vec![(0.0, 0.0); n];
+
+        // Repulsive forces between every pair of nodes
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..n {
+            for j in 0..n {
+                if i == j {
+                    continue;
+                }
+                let dx = graph.nodes[i].x - graph.nodes[j].x;
+                let dy = graph.nodes[i].y - graph.nodes[j].y;
+                let dist = (dx * dx + dy * dy).sqrt().max(0.01);
+                let force = k * k / dist;
+                displacements[i].0 += (dx / dist) * force;
+                displacements[i].1 += (dy / dist) * force;
+            }
+        }
+
+        // Attractive forces along edges
+        for edge in &graph.edges {
+            let from_idx = graph.nodes.iter().position(|n| n.id == edge.from);
+            let to_idx = graph.nodes.iter().position(|n| n.id == edge.to);
+            if let (Some(i), Some(j)) = (from_idx, to_idx) {
+                let dx = graph.nodes[i].x - graph.nodes[j].x;
+                let dy = graph.nodes[i].y - graph.nodes[j].y;
+                let dist = (dx * dx + dy * dy).sqrt().max(0.01);
+                let force = (dist * dist) / k;
+                let fx = (dx / dist) * force;
+                let fy = (dy / dist) * force;
+                displacements[i].0 -= fx;
+                displacements[i].1 -= fy;
+                displacements[j].0 += fx;
+                displacements[j].1 += fy;
+            }
+        }
+
+        // Apply displacements, capped by temperature, kept inside bounds
+        for (i, node) in graph.nodes.iter_mut().enumerate() {
+            let (dx, dy) = displacements[i];
+            let mag = (dx * dx + dy * dy).sqrt().max(0.01);
+            let capped = mag.min(temperature);
+            node.x = (node.x + (dx / mag) * capped).clamp(20.0, area - 20.0);
+            node.y = (node.y + (dy / mag) * capped).clamp(20.0, area - 20.0);
+        }
+
+        temperature -= cooling;
+        temperature = temperature.max(1.0);
+    }
+}
