@@ -20,6 +20,7 @@ mod filter;
 pub mod follow;
 pub mod forecast;
 pub mod geofold;
+pub mod graph;
 pub mod health;
 pub mod histogram;
 pub mod merge;
