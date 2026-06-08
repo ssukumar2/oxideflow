@@ -178,3 +178,78 @@ pub fn force_directed_layout(graph: &mut Graph, area: f64, iterations: usize) {
         temperature = temperature.max(1.0);
     }
 }
+
+/// Render a laid-out graph as standalone SVG.
+/// Node size scales with weight, edge stroke-width scales with weight.
+#[allow(dead_code)]
+pub fn render_svg(graph: &Graph, width: f64, height: f64) -> String {
+    let max_node_weight = graph
+        .nodes
+        .iter()
+        .map(|n| n.weight)
+        .max()
+        .unwrap_or(1)
+        .max(1);
+    let max_edge_weight = graph
+        .edges
+        .iter()
+        .map(|e| e.weight)
+        .max()
+        .unwrap_or(1)
+        .max(1);
+
+    let mut svg = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {} {}\" font-family=\"sans-serif\">",
+        width, height
+    );
+
+    svg.push_str(
+        "<defs><marker id=\"arrow\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\"          markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\">         <path d=\"M0,0 L10,5 L0,10 z\" fill=\"#888\"/></marker></defs>",
+    );
+
+    // Edges first so nodes overlay them
+    for edge in &graph.edges {
+        let from = graph.nodes.iter().find(|n| n.id == edge.from);
+        let to = graph.nodes.iter().find(|n| n.id == edge.to);
+        if let (Some(f), Some(t)) = (from, to) {
+            let stroke = 1.0 + 4.0 * (edge.weight as f64 / max_edge_weight as f64);
+            svg.push_str(&format!(
+                "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\"                  stroke=\"#888\" stroke-width=\"{:.1}\"                  marker-end=\"url(#arrow)\" opacity=\"0.7\"/>",
+                f.x, f.y, t.x, t.y, stroke
+            ));
+        }
+    }
+
+    // Nodes with labels
+    for node in &graph.nodes {
+        let radius = 15.0 + 25.0 * (node.weight as f64 / max_node_weight as f64);
+        let color = match node.label.to_uppercase().as_str() {
+            "ERROR" => "#e74c3c",
+            "WARN" | "WARNING" => "#f39c12",
+            "INFO" => "#3498db",
+            "DEBUG" => "#95a5a6",
+            "TRACE" => "#8e44ad",
+            _ => "#34495e",
+        };
+        svg.push_str(&format!(
+            "<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"{}\"              stroke=\"white\" stroke-width=\"2\"/>",
+            node.x, node.y, radius, color
+        ));
+        svg.push_str(&format!(
+            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\"              dominant-baseline=\"middle\" fill=\"white\" font-size=\"12\"              font-weight=\"bold\">{}</text>",
+            node.x, node.y, node.label
+        ));
+    }
+
+    svg.push_str("</svg>");
+    svg
+}
+
+/// Convenience: build, layout, and render a level-transition graph in one call.
+#[allow(dead_code)]
+pub fn level_transition_svg(lines: &[crate::parser::LogLine], width: f64, height: f64) -> String {
+    let transitions = crate::stats::level_transitions(lines);
+    let mut g = from_level_transitions(&transitions);
+    force_directed_layout(&mut g, width.min(height), 100);
+    render_svg(&g, width, height)
+}
