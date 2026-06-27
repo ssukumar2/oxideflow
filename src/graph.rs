@@ -297,3 +297,29 @@ pub fn shortest_path(graph: &Graph, start: &str, end: &str) -> Vec<String> {
     }
     Vec::new()
 }
+
+/// Compute degree centrality for each node (count of incident edges).
+/// Returns (node_id, degree) sorted descending by degree.
+#[allow(dead_code)]
+pub fn degree_centrality(graph: &Graph) -> Vec<(String, usize)> {
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for node in &graph.nodes {
+        counts.insert(node.id.clone(), 0);
+    }
+    for edge in &graph.edges {
+        *counts.entry(edge.from.clone()).or_insert(0) += 1;
+        *counts.entry(edge.to.clone()).or_insert(0) += 1;
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by_key(|b| std::cmp::Reverse(b.1));
+    v
+}
+
+/// Find the node with the highest degree centrality (most connected).
+#[allow(dead_code)]
+pub fn most_central_node(graph: &Graph) -> Option<String> {
+    degree_centrality(graph)
+        .into_iter()
+        .next()
+        .map(|(id, _)| id)
+}
