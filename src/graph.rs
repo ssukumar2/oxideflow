@@ -323,3 +323,42 @@ pub fn most_central_node(graph: &Graph) -> Option<String> {
         .next()
         .map(|(id, _)| id)
 }
+
+/// Find connected components in the graph using DFS.
+/// Returns a vector of components, each a list of node IDs.
+#[allow(dead_code)]
+pub fn connected_components(graph: &Graph) -> Vec<Vec<String>> {
+    use std::collections::HashSet;
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut components: Vec<Vec<String>> = Vec::new();
+
+    for node in &graph.nodes {
+        if visited.contains(&node.id) {
+            continue;
+        }
+        let mut component: Vec<String> = Vec::new();
+        let mut stack: Vec<String> = vec![node.id.clone()];
+        while let Some(current) = stack.pop() {
+            if !visited.insert(current.clone()) {
+                continue;
+            }
+            component.push(current.clone());
+            for edge in &graph.edges {
+                if edge.from == current && !visited.contains(&edge.to) {
+                    stack.push(edge.to.clone());
+                } else if edge.to == current && !visited.contains(&edge.from) {
+                    stack.push(edge.from.clone());
+                }
+            }
+        }
+        components.push(component);
+    }
+    components.sort_by_key(|c| std::cmp::Reverse(c.len()));
+    components
+}
+
+/// Return true if the graph forms a single connected component.
+#[allow(dead_code)]
+pub fn is_connected(graph: &Graph) -> bool {
+    connected_components(graph).len() <= 1
+}
