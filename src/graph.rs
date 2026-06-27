@@ -253,3 +253,191 @@ pub fn level_transition_svg(lines: &[crate::parser::LogLine], width: f64, height
     force_directed_layout(&mut g, width.min(height), 100);
     render_svg(&g, width, height)
 }
+
+/// Find the shortest path between two nodes using BFS (unweighted).
+/// Returns the sequence of node IDs from start to end, or empty if no path.
+#[allow(dead_code)]
+pub fn shortest_path(graph: &Graph, start: &str, end: &str) -> Vec<String> {
+    use std::collections::{HashMap, VecDeque};
+    if start == end {
+        return vec![start.to_string()];
+    }
+    let mut visited: HashMap<String, Option<String>> = HashMap::new();
+    visited.insert(start.to_string(), None);
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(start.to_string());
+
+    while let Some(current) = queue.pop_front() {
+        for edge in &graph.edges {
+            let neighbor = if edge.from == current {
+                Some(edge.to.clone())
+            } else if edge.to == current {
+                Some(edge.from.clone())
+            } else {
+                None
+            };
+            if let Some(next) = neighbor {
+                if !visited.contains_key(&next) {
+                    visited.insert(next.clone(), Some(current.clone()));
+                    if next == end {
+                        let mut path = vec![next.clone()];
+                        let mut cur = current;
+                        path.push(cur.clone());
+                        while let Some(Some(p)) = visited.get(&cur).cloned() {
+                            path.push(p.clone());
+                            cur = p;
+                        }
+                        path.reverse();
+                        return path;
+                    }
+                    queue.push_back(next);
+                }
+            }
+        }
+    }
+    Vec::new()
+}
+
+/// Compute degree centrality for each node (count of incident edges).
+/// Returns (node_id, degree) sorted descending by degree.
+#[allow(dead_code)]
+pub fn degree_centrality(graph: &Graph) -> Vec<(String, usize)> {
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for node in &graph.nodes {
+        counts.insert(node.id.clone(), 0);
+    }
+    for edge in &graph.edges {
+        *counts.entry(edge.from.clone()).or_insert(0) += 1;
+        *counts.entry(edge.to.clone()).or_insert(0) += 1;
+    }
+    let mut v: Vec<_> = counts.into_iter().collect();
+    v.sort_by_key(|b| std::cmp::Reverse(b.1));
+    v
+}
+
+/// Find the node with the highest degree centrality (most connected).
+#[allow(dead_code)]
+pub fn most_central_node(graph: &Graph) -> Option<String> {
+    degree_centrality(graph)
+        .into_iter()
+        .next()
+        .map(|(id, _)| id)
+}
+
+/// Find connected components in the graph using DFS.
+/// Returns a vector of components, each a list of node IDs.
+#[allow(dead_code)]
+pub fn connected_components(graph: &Graph) -> Vec<Vec<String>> {
+    use std::collections::HashSet;
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut components: Vec<Vec<String>> = Vec::new();
+
+    for node in &graph.nodes {
+        if visited.contains(&node.id) {
+            continue;
+        }
+        let mut component: Vec<String> = Vec::new();
+        let mut stack: Vec<String> = vec![node.id.clone()];
+        while let Some(current) = stack.pop() {
+            if !visited.insert(current.clone()) {
+                continue;
+            }
+            component.push(current.clone());
+            for edge in &graph.edges {
+                if edge.from == current && !visited.contains(&edge.to) {
+                    stack.push(edge.to.clone());
+                } else if edge.to == current && !visited.contains(&edge.from) {
+                    stack.push(edge.from.clone());
+                }
+            }
+        }
+        components.push(component);
+    }
+    components.sort_by_key(|c| std::cmp::Reverse(c.len()));
+    components
+}
+
+/// Return true if the graph forms a single connected component.
+#[allow(dead_code)]
+pub fn is_connected(graph: &Graph) -> bool {
+    connected_components(graph).len() <= 1
+}
+
+/// Detect whether the directed graph contains a cycle using DFS with coloring.
+/// Returns true if any cycle exists.
+#[allow(dead_code)]
+pub fn has_cycle(graph: &Graph) -> bool {
+    use std::collections::HashMap;
+    #[derive(Clone, Copy, PartialEq)]
+    enum Color {
+        White,
+        Gray,
+        Black,
+    }
+    let mut color: HashMap<String, Color> = HashMap::new();
+    for node in &graph.nodes {
+        color.insert(node.id.clone(), Color::White);
+    }
+    fn visit(node: &str, graph: &Graph, color: &mut HashMap<String, Color>) -> bool {
+        color.insert(node.to_string(), Color::Gray);
+        for edge in &graph.edges {
+            if edge.from != node {
+                continue;
+            }
+            match color.get(&edge.to).copied().unwrap_or(Color::White) {
+                Color::Gray => return true,
+                Color::White => {
+                    if visit(&edge.to, graph, color) {
+                        return true;
+                    }
+                }
+                Color::Black => {}
+            }
+        }
+        color.insert(node.to_string(), Color::Black);
+        false
+    }
+    for node in &graph.nodes {
+        if color.get(&node.id).copied() == Some(Color::White) && visit(&node.id, graph, &mut color)
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Topological sort using Kahn's algorithm. Returns empty if graph has cycles.
+#[allow(dead_code)]
+pub fn topological_sort(graph: &Graph) -> Vec<String> {
+    use std::collections::{HashMap, VecDeque};
+    let mut in_degree: HashMap<String, usize> = HashMap::new();
+    for node in &graph.nodes {
+        in_degree.insert(node.id.clone(), 0);
+    }
+    for edge in &graph.edges {
+        *in_degree.entry(edge.to.clone()).or_insert(0) += 1;
+    }
+    let mut queue: VecDeque<String> = in_degree
+        .iter()
+        .filter(|(_, &d)| d == 0)
+        .map(|(k, _)| k.clone())
+        .collect();
+    let mut order: Vec<String> = Vec::new();
+    while let Some(current) = queue.pop_front() {
+        order.push(current.clone());
+        for edge in &graph.edges {
+            if edge.from == current {
+                let d = in_degree.entry(edge.to.clone()).or_insert(1);
+                *d -= 1;
+                if *d == 0 {
+                    queue.push_back(edge.to.clone());
+                }
+            }
+        }
+    }
+    if order.len() == graph.nodes.len() {
+        order
+    } else {
+        Vec::new()
+    }
+}
