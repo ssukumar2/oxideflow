@@ -253,3 +253,47 @@ pub fn level_transition_svg(lines: &[crate::parser::LogLine], width: f64, height
     force_directed_layout(&mut g, width.min(height), 100);
     render_svg(&g, width, height)
 }
+
+/// Find the shortest path between two nodes using BFS (unweighted).
+/// Returns the sequence of node IDs from start to end, or empty if no path.
+#[allow(dead_code)]
+pub fn shortest_path(graph: &Graph, start: &str, end: &str) -> Vec<String> {
+    use std::collections::{HashMap, VecDeque};
+    if start == end {
+        return vec![start.to_string()];
+    }
+    let mut visited: HashMap<String, Option<String>> = HashMap::new();
+    visited.insert(start.to_string(), None);
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(start.to_string());
+
+    while let Some(current) = queue.pop_front() {
+        for edge in &graph.edges {
+            let neighbor = if edge.from == current {
+                Some(edge.to.clone())
+            } else if edge.to == current {
+                Some(edge.from.clone())
+            } else {
+                None
+            };
+            if let Some(next) = neighbor {
+                if !visited.contains_key(&next) {
+                    visited.insert(next.clone(), Some(current.clone()));
+                    if next == end {
+                        let mut path = vec![next.clone()];
+                        let mut cur = current;
+                        path.push(cur.clone());
+                        while let Some(Some(p)) = visited.get(&cur).cloned() {
+                            path.push(p.clone());
+                            cur = p;
+                        }
+                        path.reverse();
+                        return path;
+                    }
+                    queue.push_back(next);
+                }
+            }
+        }
+    }
+    Vec::new()
+}
