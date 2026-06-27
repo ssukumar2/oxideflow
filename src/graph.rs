@@ -362,3 +362,82 @@ pub fn connected_components(graph: &Graph) -> Vec<Vec<String>> {
 pub fn is_connected(graph: &Graph) -> bool {
     connected_components(graph).len() <= 1
 }
+
+/// Detect whether the directed graph contains a cycle using DFS with coloring.
+/// Returns true if any cycle exists.
+#[allow(dead_code)]
+pub fn has_cycle(graph: &Graph) -> bool {
+    use std::collections::HashMap;
+    #[derive(Clone, Copy, PartialEq)]
+    enum Color {
+        White,
+        Gray,
+        Black,
+    }
+    let mut color: HashMap<String, Color> = HashMap::new();
+    for node in &graph.nodes {
+        color.insert(node.id.clone(), Color::White);
+    }
+    fn visit(node: &str, graph: &Graph, color: &mut HashMap<String, Color>) -> bool {
+        color.insert(node.to_string(), Color::Gray);
+        for edge in &graph.edges {
+            if edge.from != node {
+                continue;
+            }
+            match color.get(&edge.to).copied().unwrap_or(Color::White) {
+                Color::Gray => return true,
+                Color::White => {
+                    if visit(&edge.to, graph, color) {
+                        return true;
+                    }
+                }
+                Color::Black => {}
+            }
+        }
+        color.insert(node.to_string(), Color::Black);
+        false
+    }
+    for node in &graph.nodes {
+        if color.get(&node.id).copied() == Some(Color::White) && visit(&node.id, graph, &mut color)
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Topological sort using Kahn's algorithm. Returns empty if graph has cycles.
+#[allow(dead_code)]
+pub fn topological_sort(graph: &Graph) -> Vec<String> {
+    use std::collections::{HashMap, VecDeque};
+    let mut in_degree: HashMap<String, usize> = HashMap::new();
+    for node in &graph.nodes {
+        in_degree.insert(node.id.clone(), 0);
+    }
+    for edge in &graph.edges {
+        *in_degree.entry(edge.to.clone()).or_insert(0) += 1;
+    }
+    let mut queue: VecDeque<String> = in_degree
+        .iter()
+        .filter(|(_, &d)| d == 0)
+        .map(|(k, _)| k.clone())
+        .collect();
+    let mut order: Vec<String> = Vec::new();
+    while let Some(current) = queue.pop_front() {
+        order.push(current.clone());
+        for edge in &graph.edges {
+            if edge.from == current {
+                let d = in_degree.entry(edge.to.clone()).or_insert(1);
+                *d -= 1;
+                if *d == 0 {
+                    queue.push_back(edge.to.clone());
+                }
+            }
+        }
+    }
+    if order.len() == graph.nodes.len() {
+        order
+    } else {
+        Vec::new()
+    }
+}
