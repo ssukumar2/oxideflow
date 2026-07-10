@@ -441,3 +441,34 @@ pub fn topological_sort(graph: &Graph) -> Vec<String> {
         Vec::new()
     }
 }
+
+/// Density of the graph: ratio of actual edges to possible edges.
+/// Returns a value between 0.0 (no edges) and 1.0 (fully connected).
+#[allow(dead_code)]
+pub fn density(graph: &Graph) -> f64 {
+    let n = graph.nodes.len();
+    if n < 2 {
+        return 0.0;
+    }
+    let max_edges = n * (n - 1);
+    graph.edges.len() as f64 / max_edges as f64
+}
+
+/// Diameter: the longest shortest-path in the graph.
+/// Returns 0 if the graph is empty or disconnected.
+#[allow(dead_code)]
+pub fn diameter(graph: &Graph) -> usize {
+    let mut max_len = 0usize;
+    for a in &graph.nodes {
+        for b in &graph.nodes {
+            if a.id == b.id {
+                continue;
+            }
+            let path = shortest_path(graph, &a.id, &b.id);
+            if path.len() > max_len {
+                max_len = path.len().saturating_sub(1);
+            }
+        }
+    }
+    max_len
+}
