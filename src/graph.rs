@@ -510,3 +510,37 @@ pub fn pagerank(graph: &Graph, damping: f64, iterations: usize) -> Vec<(String, 
     v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     v
 }
+
+/// Export a graph in DOT format for use with Graphviz.
+/// The output can be piped to `dot -Tsvg` or `dot -Tpng`.
+#[allow(dead_code)]
+pub fn to_dot(graph: &Graph) -> String {
+    let mut out = String::from("digraph oxideflow {\n");
+    out.push_str("  node [shape=circle, style=filled, fillcolor=\"#3498db\"];\n");
+    out.push_str("  edge [color=\"#888888\"];\n");
+    for node in &graph.nodes {
+        let color = match node.label.to_uppercase().as_str() {
+            "ERROR" => "#e74c3c",
+            "WARN" | "WARNING" => "#f39c12",
+            "INFO" => "#3498db",
+            "DEBUG" => "#95a5a6",
+            "TRACE" => "#8e44ad",
+            _ => "#34495e",
+        };
+        out.push_str(&format!(
+            "  \"{}\" [label=\"{}\", fillcolor=\"{}\"];\n",
+            node.id, node.label, color
+        ));
+    }
+    for edge in &graph.edges {
+        out.push_str(&format!(
+            "  \"{}\" -> \"{}\" [label=\"{}\", penwidth={:.1}];\n",
+            edge.from,
+            edge.to,
+            edge.weight,
+            1.0 + (edge.weight as f64).log10().max(0.0)
+        ));
+    }
+    out.push_str("}\n");
+    out
+}
