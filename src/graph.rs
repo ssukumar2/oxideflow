@@ -441,3 +441,192 @@ pub fn topological_sort(graph: &Graph) -> Vec<String> {
         Vec::new()
     }
 }
+
+/// Density of the graph: ratio of actual edges to possible edges.
+/// Returns a value between 0.0 (no edges) and 1.0 (fully connected).
+#[allow(dead_code)]
+pub fn density(graph: &Graph) -> f64 {
+    let n = graph.nodes.len();
+    if n < 2 {
+        return 0.0;
+    }
+    let max_edges = n * (n - 1);
+    graph.edges.len() as f64 / max_edges as f64
+}
+
+/// Diameter: the longest shortest-path in the graph.
+/// Returns 0 if the graph is empty or disconnected.
+#[allow(dead_code)]
+pub fn diameter(graph: &Graph) -> usize {
+    let mut max_len = 0usize;
+    for a in &graph.nodes {
+        for b in &graph.nodes {
+            if a.id == b.id {
+                continue;
+            }
+            let path = shortest_path(graph, &a.id, &b.id);
+            if path.len() > max_len {
+                max_len = path.len().saturating_sub(1);
+            }
+        }
+    }
+    max_len
+}
+
+/// PageRank centrality: iterative random-walk importance score.
+/// Higher score means the node is reached more often from random walks.
+#[allow(dead_code)]
+pub fn pagerank(graph: &Graph, damping: f64, iterations: usize) -> Vec<(String, f64)> {
+    let n = graph.nodes.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut ranks: std::collections::HashMap<String, f64> = graph
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), 1.0 / n as f64))
+        .collect();
+
+    let mut out_degree: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for edge in &graph.edges {
+        *out_degree.entry(edge.from.clone()).or_insert(0) += 1;
+    }
+
+    for _ in 0..iterations {
+        let mut new_ranks: std::collections::HashMap<String, f64> = graph
+            .nodes
+            .iter()
+            .map(|node| (node.id.clone(), (1.0 - damping) / n as f64))
+            .collect();
+        for edge in &graph.edges {
+            let out = *out_degree.get(&edge.from).unwrap_or(&1) as f64;
+            let contribution = damping * ranks.get(&edge.from).unwrap_or(&0.0) / out;
+            *new_ranks.entry(edge.to.clone()).or_insert(0.0) += contribution;
+        }
+        ranks = new_ranks;
+    }
+
+    let mut v: Vec<(String, f64)> = ranks.into_iter().collect();
+    v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    v
+}
+
+/// Export a graph in DOT format for use with Graphviz.
+/// The output can be piped to `dot -Tsvg` or `dot -Tpng`.
+#[allow(dead_code)]
+pub fn to_dot(graph: &Graph) -> String {
+    let mut out = String::from("digraph oxideflow {\n");
+    out.push_str("  node [shape=circle, style=filled, fillcolor=\"#3498db\"];\n");
+    out.push_str("  edge [color=\"#888888\"];\n");
+    for node in &graph.nodes {
+        let color = match node.label.to_uppercase().as_str() {
+            "ERROR" => "#e74c3c",
+            "WARN" | "WARNING" => "#f39c12",
+            "INFO" => "#3498db",
+            "DEBUG" => "#95a5a6",
+            "TRACE" => "#8e44ad",
+            _ => "#34495e",
+        };
+        out.push_str(&format!(
+            "  \"{}\" [label=\"{}\", fillcolor=\"{}\"];\n",
+            node.id, node.label, color
+        ));
+    }
+    for edge in &graph.edges {
+        out.push_str(&format!(
+            "  \"{}\" -> \"{}\" [label=\"{}\", penwidth={:.1}];\n",
+            edge.from,
+            edge.to,
+            edge.weight,
+            1.0 + (edge.weight as f64).log10().max(0.0)
+        ));
+    }
+    out.push_str("}\n");
+    out
+}
+
+/// Build an adjacency matrix indexed by node position in `graph.nodes`.
+/// matrix[i][j] = edge weight from node i to node j, or 0 if no edge.
+#[allow(dead_code)]
+pub fn adjacency_matrix(graph: &Graph) -> Vec<Vec<usize>> {
+    let n = graph.nodes.len();
+    let mut matrix = vec![vec![0usize; n]; n];
+    let index: std::collections::HashMap<&str, usize> = graph
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, node)| (node.id.as_str(), i))
+        .collect();
+    for edge in &graph.edges {
+        if let (Some(&i), Some(&j)) = (index.get(edge.from.as_str()), index.get(edge.to.as_str())) {
+            matrix[i][j] = matrix[i][j].saturating_add(edge.weight);
+        }
+    }
+    matrix
+}
+
+/// Compute the transitive reachability set from a starting node using BFS.
+#[allow(dead_code)]
+pub fn reachable_from(graph: &Graph, start: &str) -> std::collections::HashSet<String> {
+    use std::collections::{HashSet, VecDeque};
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    visited.insert(start.to_string());
+    queue.push_back(start.to_string());
+    while let Some(current) = queue.pop_front() {
+        for edge in &graph.edges {
+            if edge.from == current && !visited.contains(&edge.to) {
+                visited.insert(edge.to.clone());
+                queue.push_back(edge.to.clone());
+            }
+        }
+    }
+    visited.remove(start);
+    visited
+}
+
+/// Compare two graphs built from different log slices.
+/// Returns edges present in `after` but not in `before` and vice versa.
+#[allow(dead_code)]
+pub struct GraphDiff {
+    pub added_nodes: Vec<String>,
+    pub removed_nodes: Vec<String>,
+    pub added_edges: Vec<(String, String)>,
+    pub removed_edges: Vec<(String, String)>,
+}
+
+#[allow(dead_code)]
+pub fn diff_graphs(before: &Graph, after: &Graph) -> GraphDiff {
+    use std::collections::HashSet;
+    let before_nodes: HashSet<&str> = before.nodes.iter().map(|n| n.id.as_str()).collect();
+    let after_nodes: HashSet<&str> = after.nodes.iter().map(|n| n.id.as_str()).collect();
+    let before_edges: HashSet<(&str, &str)> = before
+        .edges
+        .iter()
+        .map(|e| (e.from.as_str(), e.to.as_str()))
+        .collect();
+    let after_edges: HashSet<(&str, &str)> = after
+        .edges
+        .iter()
+        .map(|e| (e.from.as_str(), e.to.as_str()))
+        .collect();
+
+    GraphDiff {
+        added_nodes: after_nodes
+            .difference(&before_nodes)
+            .map(|s| s.to_string())
+            .collect(),
+        removed_nodes: before_nodes
+            .difference(&after_nodes)
+            .map(|s| s.to_string())
+            .collect(),
+        added_edges: after_edges
+            .difference(&before_edges)
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect(),
+        removed_edges: before_edges
+            .difference(&after_edges)
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect(),
+    }
+}
