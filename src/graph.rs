@@ -472,3 +472,41 @@ pub fn diameter(graph: &Graph) -> usize {
     }
     max_len
 }
+
+/// PageRank centrality: iterative random-walk importance score.
+/// Higher score means the node is reached more often from random walks.
+#[allow(dead_code)]
+pub fn pagerank(graph: &Graph, damping: f64, iterations: usize) -> Vec<(String, f64)> {
+    let n = graph.nodes.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut ranks: std::collections::HashMap<String, f64> = graph
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), 1.0 / n as f64))
+        .collect();
+
+    let mut out_degree: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for edge in &graph.edges {
+        *out_degree.entry(edge.from.clone()).or_insert(0) += 1;
+    }
+
+    for _ in 0..iterations {
+        let mut new_ranks: std::collections::HashMap<String, f64> = graph
+            .nodes
+            .iter()
+            .map(|node| (node.id.clone(), (1.0 - damping) / n as f64))
+            .collect();
+        for edge in &graph.edges {
+            let out = *out_degree.get(&edge.from).unwrap_or(&1) as f64;
+            let contribution = damping * ranks.get(&edge.from).unwrap_or(&0.0) / out;
+            *new_ranks.entry(edge.to.clone()).or_insert(0.0) += contribution;
+        }
+        ranks = new_ranks;
+    }
+
+    let mut v: Vec<(String, f64)> = ranks.into_iter().collect();
+    v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    v
+}
