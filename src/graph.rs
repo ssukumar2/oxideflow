@@ -584,3 +584,49 @@ pub fn reachable_from(graph: &Graph, start: &str) -> std::collections::HashSet<S
     visited.remove(start);
     visited
 }
+
+/// Compare two graphs built from different log slices.
+/// Returns edges present in `after` but not in `before` and vice versa.
+#[allow(dead_code)]
+pub struct GraphDiff {
+    pub added_nodes: Vec<String>,
+    pub removed_nodes: Vec<String>,
+    pub added_edges: Vec<(String, String)>,
+    pub removed_edges: Vec<(String, String)>,
+}
+
+#[allow(dead_code)]
+pub fn diff_graphs(before: &Graph, after: &Graph) -> GraphDiff {
+    use std::collections::HashSet;
+    let before_nodes: HashSet<&str> = before.nodes.iter().map(|n| n.id.as_str()).collect();
+    let after_nodes: HashSet<&str> = after.nodes.iter().map(|n| n.id.as_str()).collect();
+    let before_edges: HashSet<(&str, &str)> = before
+        .edges
+        .iter()
+        .map(|e| (e.from.as_str(), e.to.as_str()))
+        .collect();
+    let after_edges: HashSet<(&str, &str)> = after
+        .edges
+        .iter()
+        .map(|e| (e.from.as_str(), e.to.as_str()))
+        .collect();
+
+    GraphDiff {
+        added_nodes: after_nodes
+            .difference(&before_nodes)
+            .map(|s| s.to_string())
+            .collect(),
+        removed_nodes: before_nodes
+            .difference(&after_nodes)
+            .map(|s| s.to_string())
+            .collect(),
+        added_edges: after_edges
+            .difference(&before_edges)
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect(),
+        removed_edges: before_edges
+            .difference(&after_edges)
+            .map(|(a, b)| (a.to_string(), b.to_string()))
+            .collect(),
+    }
+}
