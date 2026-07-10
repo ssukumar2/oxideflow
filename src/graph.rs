@@ -544,3 +544,43 @@ pub fn to_dot(graph: &Graph) -> String {
     out.push_str("}\n");
     out
 }
+
+/// Build an adjacency matrix indexed by node position in `graph.nodes`.
+/// matrix[i][j] = edge weight from node i to node j, or 0 if no edge.
+#[allow(dead_code)]
+pub fn adjacency_matrix(graph: &Graph) -> Vec<Vec<usize>> {
+    let n = graph.nodes.len();
+    let mut matrix = vec![vec![0usize; n]; n];
+    let index: std::collections::HashMap<&str, usize> = graph
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, node)| (node.id.as_str(), i))
+        .collect();
+    for edge in &graph.edges {
+        if let (Some(&i), Some(&j)) = (index.get(edge.from.as_str()), index.get(edge.to.as_str())) {
+            matrix[i][j] = matrix[i][j].saturating_add(edge.weight);
+        }
+    }
+    matrix
+}
+
+/// Compute the transitive reachability set from a starting node using BFS.
+#[allow(dead_code)]
+pub fn reachable_from(graph: &Graph, start: &str) -> std::collections::HashSet<String> {
+    use std::collections::{HashSet, VecDeque};
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    visited.insert(start.to_string());
+    queue.push_back(start.to_string());
+    while let Some(current) = queue.pop_front() {
+        for edge in &graph.edges {
+            if edge.from == current && !visited.contains(&edge.to) {
+                visited.insert(edge.to.clone());
+                queue.push_back(edge.to.clone());
+            }
+        }
+    }
+    visited.remove(start);
+    visited
+}
