@@ -66,6 +66,11 @@ impl Graph {
         self.edges.len()
     }
 
+    /// Return true if the graph has no nodes.
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
     #[allow(dead_code)]
     pub fn neighbors(&self, id: &str) -> Vec<&Node> {
         let neighbor_ids: Vec<&str> = self
