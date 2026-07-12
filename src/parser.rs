@@ -301,6 +301,13 @@ pub fn last_line(lines: &[LogLine]) -> Option<&LogLine> {
     lines.last()
 }
 
+/// Return true if the raw text starts with a YYYY-MM-DD or HH:MM:SS timestamp.
+#[allow(dead_code)]
+pub fn starts_with_timestamp(line: &LogLine) -> bool {
+    let re = regex::Regex::new(r"^(\d{4}-\d{2}-\d{2}|\d{2}:\d{2}:\d{2})").unwrap();
+    re.is_match(&line.raw)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
