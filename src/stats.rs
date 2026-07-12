@@ -195,6 +195,20 @@ pub fn group_by_level(lines: &[crate::parser::LogLine]) -> Vec<(String, usize, u
     v
 }
 
+/// Return the sorted list of distinct level values found.
+#[allow(dead_code)]
+pub fn distinct_levels(lines: &[crate::parser::LogLine]) -> Vec<String> {
+    let mut set: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for l in lines {
+        if let Some(lvl) = &l.level {
+            set.insert(lvl.to_uppercase());
+        }
+    }
+    let mut v: Vec<String> = set.into_iter().collect();
+    v.sort();
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
