@@ -77,6 +77,7 @@ impl Graph {
     pub fn contains_node(&self, id: &str) -> bool {
         self.nodes.iter().any(|n| n.id == id)
     }
+
     #[allow(dead_code)]
     pub fn neighbors(&self, id: &str) -> Vec<&Node> {
         let neighbor_ids: Vec<&str> = self
