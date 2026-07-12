@@ -209,6 +209,14 @@ pub fn distinct_levels(lines: &[crate::parser::LogLine]) -> Vec<String> {
     v
 }
 
+/// Return the (min, max) line numbers, or None if empty.
+#[allow(dead_code)]
+pub fn min_and_max_line_number(lines: &[crate::parser::LogLine]) -> Option<(usize, usize)> {
+    let min = lines.iter().map(|l| l.line_number).min()?;
+    let max = lines.iter().map(|l| l.line_number).max()?;
+    Some((min, max))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
