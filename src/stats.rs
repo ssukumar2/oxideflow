@@ -195,6 +195,59 @@ pub fn group_by_level(lines: &[crate::parser::LogLine]) -> Vec<(String, usize, u
     v
 }
 
+/// Return the sorted list of distinct level values found.
+#[allow(dead_code)]
+pub fn distinct_levels(lines: &[crate::parser::LogLine]) -> Vec<String> {
+    let mut set: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for l in lines {
+        if let Some(lvl) = &l.level {
+            set.insert(lvl.to_uppercase());
+        }
+    }
+    let mut v: Vec<String> = set.into_iter().collect();
+    v.sort();
+    v
+}
+
+/// Return the (min, max) line numbers, or None if empty.
+#[allow(dead_code)]
+pub fn min_and_max_line_number(lines: &[crate::parser::LogLine]) -> Option<(usize, usize)> {
+    let min = lines.iter().map(|l| l.line_number).min()?;
+    let max = lines.iter().map(|l| l.line_number).max()?;
+    Some((min, max))
+}
+
+/// Average line length in bytes, grouped by level.
+#[allow(dead_code)]
+pub fn line_length_avg_by_level(
+    lines: &[crate::parser::LogLine],
+) -> std::collections::HashMap<String, f64> {
+    let mut sums: std::collections::HashMap<String, (usize, usize)> =
+        std::collections::HashMap::new();
+    for l in lines {
+        let key = l
+            .level
+            .clone()
+            .unwrap_or_else(|| "UNKNOWN".to_string())
+            .to_uppercase();
+        let entry = sums.entry(key).or_insert((0, 0));
+        entry.0 += l.raw.len();
+        entry.1 += 1;
+    }
+    sums.into_iter()
+        .map(|(k, (total, count))| {
+            (
+                k,
+                if count == 0 {
+                    0.0
+                } else {
+                    total as f64 / count as f64
+                },
+            )
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

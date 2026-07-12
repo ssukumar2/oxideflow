@@ -159,3 +159,15 @@ pub fn to_html(lines: &[crate::parser::LogLine]) -> String {
     out.push_str("</table></body></html>");
     out
 }
+
+/// Serialize lines as tab-separated values.
+#[allow(dead_code)]
+pub fn to_tsv(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from("line_number\tlevel\traw\n");
+    for line in lines {
+        let level = line.level.as_deref().unwrap_or("");
+        let raw = line.raw.replace(['\t', '\n'], " ");
+        out.push_str(&format!("{}\t{}\t{}\n", line.line_number, level, raw));
+    }
+    out
+}

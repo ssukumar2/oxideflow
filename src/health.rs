@@ -50,3 +50,9 @@ pub fn compute(lines: &[LogLine]) -> HealthScore {
         verdict,
     }
 }
+
+/// Quick yes/no check whether the log qualifies as "healthy" (>= 90 score).
+#[allow(dead_code)]
+pub fn is_healthy(lines: &[LogLine]) -> bool {
+    compute(lines).score >= 90.0
+}
