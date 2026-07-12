@@ -289,6 +289,18 @@ pub fn hash_index(lines: &[LogLine]) -> std::collections::HashMap<u64, Vec<usize
     index
 }
 
+/// Get the first line, or None if empty.
+#[allow(dead_code)]
+pub fn first_line(lines: &[LogLine]) -> Option<&LogLine> {
+    lines.first()
+}
+
+/// Get the last line, or None if empty.
+#[allow(dead_code)]
+pub fn last_line(lines: &[LogLine]) -> Option<&LogLine> {
+    lines.last()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
