@@ -415,6 +415,19 @@ pub fn in_cidr<'a>(lines: &'a [LogLine], cidr: &str) -> Vec<&'a LogLine> {
         .collect()
 }
 
+/// Count lines whose raw content contains the given substring.
+#[allow(dead_code)]
+pub fn count_matching(lines: &[LogLine], needle: &str) -> usize {
+    lines.iter().filter(|l| l.raw.contains(needle)).count()
+}
+
+/// Count lines whose raw content matches the given regex.
+#[allow(dead_code)]
+pub fn count_regex(lines: &[LogLine], pattern: &str) -> Result<usize, regex::Error> {
+    let re = regex::Regex::new(pattern)?;
+    Ok(lines.iter().filter(|l| re.is_match(&l.raw)).count())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
