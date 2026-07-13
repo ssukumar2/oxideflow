@@ -171,3 +171,23 @@ pub fn to_tsv(lines: &[crate::parser::LogLine]) -> String {
     }
     out
 }
+
+/// Serialize lines as XML.
+#[allow(dead_code)]
+pub fn to_xml(lines: &[crate::parser::LogLine]) -> String {
+    let mut out = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logs>\n");
+    for line in lines {
+        let level = line.level.as_deref().unwrap_or("");
+        let raw = line
+            .raw
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;");
+        out.push_str(&format!(
+            "  <line number=\"{}\" level=\"{}\">{}</line>\n",
+            line.line_number, level, raw
+        ));
+    }
+    out.push_str("</logs>\n");
+    out
+}
