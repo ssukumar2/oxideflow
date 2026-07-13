@@ -428,6 +428,12 @@ pub fn count_regex(lines: &[LogLine], pattern: &str) -> Result<usize, regex::Err
     Ok(lines.iter().filter(|l| re.is_match(&l.raw)).count())
 }
 
+/// Count distinct IPv4 addresses appearing in the log.
+#[allow(dead_code)]
+pub fn unique_ip_count(lines: &[LogLine]) -> usize {
+    extract_ipv4(lines).len()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
